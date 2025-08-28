@@ -1,70 +1,105 @@
-# Getting Started with Create React App
+# Testlog React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project is a **React-based frontend** for managing and analyzing performance test logs.  
+It integrates with a backend API to store, retrieve, and update test data across multiple projects.
+https://github.com/ostbergjohan/pt-log-backend is required.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## ✨ Features
 
-### `npm start`
+- 📂 **Project Management**
+  - Create and select projects.
+- 🧪 **Test Management**
+  - Add new tests with metadata (type, name, purpose, tester).
+  - Copy test names with a single click.
+- 📝 **Analysis**
+  - Add or update analysis text for each test entry.
+- 👤 **Testers**
+  - Tester names are loaded from `testers.json` and selectable in the UI.
+- 🔄 **Data Handling**
+  - Fetches and refreshes data from backend APIs.
+  - Inline editing and saving of analysis.
+- ✅ **Feedback**
+  - Shows loading states and “Copied!” toast notifications.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 📦 Tech Stack
 
-### `npm test`
+- [React](https://react.dev/) (Hooks, functional components)
+- [lucide-react](https://lucide.dev/) for icons
+- CSS for styling (`App.css`)
+- External JSON configuration:
+  - `config.js` for API base URL
+  - `testers.json` for tester names
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## ⚙️ Setup
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 1. Clone the repository
+```bash
+git clone https://github.com/ostbergjohan/pt-log-front
+cd testlog-frontend
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 2. Install dependencies
+```bash
+npm install
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 3. Configure API base
+Update the `config.js` file with your backend API base URL:
+```js
+const config = {
+  API_BASE: "https://your-backend-url"
+};
+export default config;
+```
 
-### `npm run eject`
+### 4. Run the app
+```bash
+npm start
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+This will start the app on [http://localhost:3000](http://localhost:3000).
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 📁 Project Structure
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```
+src/
+ ├── App.js          # Main React component
+ ├── App.css         # Styling
+ ├── config.js       # API base URL config
+ ├── testers.json    # List of testers
+ └── components/     # (Optional future split of forms/components)
+```
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 🔌 Backend API Endpoints
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+The frontend expects the following backend endpoints:
 
-### Code Splitting
+- `GET /populate` → returns all projects
+- `GET /getData?projekt={name}` → returns tests for a project
+- `POST /insert` → insert new test
+- `POST /createProject` → create a new project
+- `PUT /updateAnalys` → update analysis field for a test
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+---
 
-### Analyzing the Bundle Size
+## 🖼️ UI Overview
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- **Header bar**: Buttons for "Nytt Test" (new test), "Skapa Projekt" (create project), project & tester dropdowns.
+- **Tabs**: 
+  - New test form
+  - Create project form
+  - Analysis editor
+- **Table**: Displays test data with columns:  
+  `DATUM, TYP, TESTNAMN, SYFTE, ANALYS, PROJEKT, TESTARE`
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
