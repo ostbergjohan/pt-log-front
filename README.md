@@ -1,7 +1,7 @@
 # Testlog React App
 
 <p align="left">
-  <img src="https://github.com/ostbergjohan/pt-log-backend/raw/main/image/screenshot.png" alt="Screenshot" width="600">
+  <img src="https://github.com/ostbergjohan/pt-log-backend/raw/main/image/screenshot.png" alt="Screenshot">
 </p>
 
 This project is a **React-based frontend** for managing and analyzing performance test logs.  
