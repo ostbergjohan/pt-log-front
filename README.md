@@ -1,5 +1,7 @@
 # Testlog React App
 
+![Screenshot](https://github.com/ostbergjohan/pt-log-backend/blob/main/image/screenshot.png?raw=true | width=600)
+
 This project is a **React-based frontend** for managing and analyzing performance test logs.  
 It integrates with a backend API to store, retrieve, and update test data across multiple projects.
 https://github.com/ostbergjohan/pt-log-backend is required.
