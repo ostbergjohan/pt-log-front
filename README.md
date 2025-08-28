@@ -1,6 +1,6 @@
 # Testlog React App
 
-<p align="center">
+<p align="left">
   <img src="https://github.com/ostbergjohan/pt-log-backend/raw/main/image/screenshot.png" alt="Screenshot" width="600">
 </p>
 
