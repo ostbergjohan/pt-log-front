@@ -1,4 +1,4 @@
-# Testlog React App
+# PT-Log 2.0
 
 <p align="left">
   <img src="https://github.com/ostbergjohan/pt-log-backend/raw/main/image/screenshot.png" alt="Screenshot">
