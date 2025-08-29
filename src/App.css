@@ -29,6 +29,10 @@
 .btn.green:hover { background: #059669; }
 .btn.disabled { background: #9ca3af; cursor: not-allowed; }
 
+/* --- Red button --- */
+.btn.red { background: #e74c3c; }       /* red */
+.btn.red:hover { background: #c0392b; } /* darker red on hover */
+
 .label { font-weight: bold; margin-left: 10px; margin-right: 5px; }
 .dropdown { padding: 8px 10px; border-radius: 8px; border: 2px solid #60a5fa; } /* blue-400 */
 
@@ -41,6 +45,12 @@
 
 .blue-tab { background-color: #eff6ff; border: 2px solid #2563eb; } /* blue-50 with blue-600 border */
 .green-tab { background-color: #ecfdf5; border: 2px solid #10b981; }
+
+/* --- Red tab/modal --- */
+.red-tab {
+  background-color: #f8d7da; /* light red/pinkish background */
+  border: 2px solid #e74c3c;
+}
 
 .table-container {
   background: white;
