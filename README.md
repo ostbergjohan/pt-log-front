@@ -1,6 +1,8 @@
-# Testlog React App
+# PT-Log 2.0
 
-![Screenshot](https://github.com/ostbergjohan/pt-log-backend/blob/main/image/screenshot.png?raw=true | width=600)
+<p align="left">
+  <img src="https://github.com/ostbergjohan/pt-log-backend/raw/main/image/screenshot.png" alt="Screenshot">
+</p>
 
 This project is a **React-based frontend** for managing and analyzing performance test logs.  
 It integrates with a backend API to store, retrieve, and update test data across multiple projects.
