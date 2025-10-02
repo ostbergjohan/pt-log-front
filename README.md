@@ -4,7 +4,7 @@
   <img src="https://github.com/ostbergjohan/pt-log-backend/raw/main/image/screenshot.png" alt="Screenshot">
 </p>
 
-This project is a **React-based frontend** for managing and analyzing performance test logs.  
+This project is a **React-based frontend** for managing and analyzing performance test runs.  
 It integrates with a backend API to store, retrieve, and update test data across multiple projects.
 https://github.com/ostbergjohan/pt-log-backend is required.
 
