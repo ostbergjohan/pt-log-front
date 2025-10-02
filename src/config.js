@@ -1,4 +1,4 @@
 const config = {
-    API_BASE: "https://change.me"
+    API_BASE: "https://ptlog-backend-url"
 };
 export default config;

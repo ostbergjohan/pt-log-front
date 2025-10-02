@@ -1,309 +1,1050 @@
-import React, { useEffect, useState } from "react";
-import './App.css';
-import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator } from "lucide-react";
-import testersData from "./testers.json"; // import testers from JSON
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2 } from "lucide-react";
+import testersData from "./testers.json";
 import config from "./config";
 
 export default function App() {
     const [projects, setProjects] = useState([]);
-    const [selectedProject, setSelectedProject] = useState("");
+    const [selectedProject, setSelectedProject] = useState(() => localStorage.getItem('lastProject') || "");
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState("");
-    const [form, setForm] = useState({
-        Typ: "Referenstest",
-        Testnamn: "",
-        Syfte: "",
-        Testare: "Johan",
+    const [form, setForm] = useState(() => {
+        const savedTester = localStorage.getItem('lastTester');
+        return { Typ: "Referenstest", Testnamn: "", Syfte: "", Testare: savedTester || "Johan" };
     });
     const [newProjectName, setNewProjectName] = useState("");
     const [analysRow, setAnalysRow] = useState(null);
     const [analysText, setAnalysText] = useState("");
     const [copied, setCopied] = useState(false);
-    const [testers, setTesters] = useState([]);
-
-    // new kalkyl state
-    const [kalkyl, setKalkyl] = useState({
-        reqH: "",
-        reqS: "",
-        vu: "",
-        pacing: ""
-    });
+    const [testers] = useState(testersData);
+    const [kalkyl, setKalkyl] = useState({ reqH: "", reqS: "", vu: "", pacing: "", skript: "" });
+    const [error, setError] = useState("");
+    const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const [deleteTestConfirm, setDeleteTestConfirm] = useState(null);
 
     const API_BASE = config.API_BASE;
 
-    // ------------------- Load projects & testers -------------------
     useEffect(() => {
-        setTesters(testersData);
+        if (selectedProject) localStorage.setItem('lastProject', selectedProject);
+    }, [selectedProject]);
 
+    useEffect(() => {
+        if (form.Testare) localStorage.setItem('lastTester', form.Testare);
+    }, [form.Testare]);
+
+    useEffect(() => {
         fetch(`${API_BASE}/populate`)
             .then(res => res.json())
             .then(json => Array.isArray(json) ? setProjects(json) : setProjects([]))
-            .catch(err => { console.error("Failed to load projects", err); setProjects([]); });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+            .catch(err => {
+                console.error("Failed to load projects", err);
+                setError("Failed to load projects");
+            });
+    }, [API_BASE]);
 
-    // ------------------- Load project data -------------------
-    useEffect(() => {
-        if (!selectedProject) return;
+    const refreshData = useCallback(() => {
+        if (!selectedProject) return Promise.resolve();
         setLoading(true);
-        fetch(`${API_BASE}/getData?projekt=${encodeURIComponent(selectedProject)}`)
-            .then(res => res.json())
+        setError("");
+
+        return fetch(`${API_BASE}/getData?projekt=${encodeURIComponent(selectedProject)}`)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return res.json();
+            })
             .then(rawData => {
                 const formatted = rawData.map(item => {
                     const d = new Date(item.DATUM || item.Datum);
-                    return { ...item, DATUM: `${d.toISOString().split("T")[0]} ${d.toTimeString().slice(0,5)}` };
+                    const dateStr = d.toISOString().split("T")[0];
+                    const timeStr = d.toTimeString().slice(0, 5);
+                    return { ...item, DATUM: `${dateStr} ${timeStr}` };
                 });
                 setData(formatted);
             })
-            .catch(err => { console.error("Failed to load data", err); setData([]); })
+            .catch(err => {
+                console.error("Failed to load data", err);
+                setError("Failed to load project data");
+            })
             .finally(() => setLoading(false));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedProject]);
+    }, [selectedProject, API_BASE]);
 
-    // ------------------- Handlers -------------------
-    const handleSubmit = () => {
-        const payload = { Datum: new Date().toISOString(), ...form, Projekt: selectedProject };
-        fetch(`${API_BASE}/insert`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        })
-            .then(res => { if (!res.ok) throw new Error("Insert failed"); return res.text(); })
-            .then(() => {
-                setForm({ Typ: "Referenstest", Testnamn: "", Syfte: "", Testare: "Johan" });
-                setActiveTab("");
-                return refreshData();
-            })
-            .catch(err => console.error("Insert error:", err));
-    };
+    useEffect(() => {
+        refreshData();
+    }, [refreshData]);
 
-    const handleAddProject = () => {
-        if (!newProjectName.trim()) return;
-        fetch(`${API_BASE}/createProject`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ Projekt: newProjectName.trim() })
-        })
-            .then(res => res.text())
-            .then(() => {
-                setNewProjectName("");
-                setActiveTab("");
-                return fetch(`${API_BASE}/populate`)
-                    .then(res => res.json())
-                    .then(json => Array.isArray(json) ? setProjects(json) : setProjects([]));
-            })
-            .catch(err => console.error("Add project error:", err));
-    };
+    const handleSubmit = useCallback(async () => {
+        if (!form.Testnamn.trim() || !form.Syfte.trim() || !selectedProject) return;
 
-    const handleSaveAnalys = () => {
-        if (!analysRow || !analysText.trim()) return;
+        setError("");
+        const payload = {
+            Datum: new Date().toISOString(),
+            ...form,
+            Projekt: selectedProject
+        };
+
+        try {
+            const res = await fetch(`${API_BASE}/insert`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error("Insert failed");
+
+            setForm(prev => ({
+                Typ: "Referenstest",
+                Testnamn: "",
+                Syfte: "",
+                Testare: prev.Testare
+            }));
+            setActiveTab("");
+            await refreshData();
+        } catch (err) {
+            console.error("Insert error:", err);
+            setError("Failed to create test");
+        }
+    }, [form, selectedProject, API_BASE, refreshData]);
+
+    const handleAddProject = useCallback(async () => {
+        const trimmedName = newProjectName.trim();
+        if (!trimmedName) return;
+
+        if (projects.includes(trimmedName)) {
+            setError("Project already exists");
+            return;
+        }
+
+        setError("");
+        try {
+            const res = await fetch(`${API_BASE}/createProject`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ Projekt: trimmedName })
+            });
+
+            if (!res.ok) throw new Error("Create project failed");
+
+            const projectsRes = await fetch(`${API_BASE}/populate`);
+            const json = await projectsRes.json();
+            setProjects(Array.isArray(json) ? json : []);
+            setNewProjectName("");
+            setActiveTab("");
+            setSelectedProject(trimmedName);
+        } catch (err) {
+            console.error("Add project error:", err);
+            setError("Failed to create project");
+        }
+    }, [newProjectName, projects, API_BASE]);
+
+    const handleSaveAnalys = useCallback(async () => {
+        if (!analysRow) return;
+
+        setError("");
         const payload = {
             Projekt: analysRow.PROJEKT ?? analysRow.projekt,
             Testnamn: analysRow.TESTNAMN ?? analysRow.testnamn,
             Analys: analysText.trim()
         };
-        fetch(`${API_BASE}/updateAnalys`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        })
-            .then(res => { if (!res.ok) throw new Error("Update failed"); return res.text(); })
-            .then(() => {
-                setAnalysRow(null);
-                setAnalysText("");
-                setActiveTab("");
-                return refreshData();
-            })
-            .catch(err => console.error("UpdateAnalys error:", err));
-    };
 
-    const refreshData = () => {
-        return fetch(`${API_BASE}/getData?projekt=${encodeURIComponent(selectedProject)}`)
-            .then(res => res.json())
-            .then(rawData => {
-                const formatted = rawData.map(item => {
-                    const d = new Date(item.DATUM || item.Datum);
-                    return { ...item, DATUM: `${d.toISOString().split("T")[0]} ${d.toTimeString().slice(0,5)}` };
-                });
-                setData(formatted);
+        try {
+            const res = await fetch(`${API_BASE}/updateAnalys`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
             });
-    };
 
-    const handleCopy = (text) => {
-        if (!text) return;
-        let toCopy = text;
-        if (typeof text === "string" && text.endsWith(" s")) {
-            toCopy = text.slice(0, -2);
+            if (!res.ok) throw new Error("Update failed");
+
+            setAnalysRow(null);
+            setAnalysText("");
+            setActiveTab("");
+            await refreshData();
+        } catch (err) {
+            console.error("UpdateAnalys error:", err);
+            setError("Failed to update analysis");
         }
-        navigator.clipboard.writeText(toCopy);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
+    }, [analysRow, analysText, API_BASE, refreshData]);
 
-    const columns = ["DATUM", "TYP", "TESTNAMN", "SYFTE", "ANALYS", "PROJEKT", "TESTARE"];
-    const isFormValid = form.Testnamn.trim() && form.Syfte.trim() && selectedProject;
+    const handleCopy = useCallback((text) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }).catch(err => {
+            console.error("Copy failed:", err);
+            setError("Failed to copy to clipboard");
+        });
+    }, []);
 
-    // ------------------- Helper to render URLs in ANALYS -------------------
-    const renderAnalysText = (text) => {
+    const calculatedKalkyl = useMemo(() => {
+        const reqH = Number(kalkyl.reqH) || 0;
+        const vu = Number(kalkyl.vu) || 0;
+        const reqS = reqH ? (reqH / 3600).toFixed(2) : "";
+        const pacing = (reqH && vu) ? (reqH / vu).toFixed(2) : "";
+        return { ...kalkyl, reqS, pacing };
+    }, [kalkyl]);
+
+    const handleAddKonfig = useCallback(async () => {
+        const reqH = Number(kalkyl.reqH);
+        const vu = Number(kalkyl.vu);
+
+        if (!reqH || !vu || !selectedProject) {
+            setError("Please fill in required fields (Req/h and Antal Vu)");
+            return;
+        }
+
+        setError("");
+        const newRow = {
+            TESTNAMN: "KONFIG",
+            REQH: kalkyl.reqH,
+            REQS: calculatedKalkyl.reqS,
+            VU: kalkyl.vu,
+            PACING: calculatedKalkyl.pacing,
+            SKRIPT: kalkyl.skript || "",
+            PROJEKT: selectedProject,
+            TESTARE: form.Testare
+        };
+
+        try {
+            const res = await fetch(`${API_BASE}/addKonfig`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newRow)
+            });
+
+            if (!res.ok) throw new Error("Add konfig failed");
+
+            setKalkyl({ reqH: "", reqS: "", vu: "", pacing: "", skript: "" });
+            setActiveTab("");
+            await refreshData();
+        } catch (err) {
+            console.error("AddKonfig error:", err);
+            setError("Failed to add configuration");
+        }
+    }, [kalkyl, calculatedKalkyl, selectedProject, form.Testare, API_BASE, refreshData]);
+
+    const handleDeleteProject = useCallback(async (projectName) => {
+        setError("");
+
+        try {
+            const res = await fetch(`${API_BASE}/deleteProject`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ Projekt: projectName })
+            });
+
+            if (!res.ok) throw new Error("Delete project failed");
+
+            const projectsRes = await fetch(`${API_BASE}/populate`);
+            const json = await projectsRes.json();
+            setProjects(Array.isArray(json) ? json : []);
+
+            if (selectedProject === projectName) {
+                setSelectedProject("");
+                setData([]);
+            }
+
+            setDeleteConfirm(null);
+        } catch (err) {
+            console.error("Delete project error:", err);
+            setError("Failed to delete project");
+        }
+    }, [API_BASE, selectedProject]);
+
+    const handleDeleteTest = useCallback(async (projekt, testnamn) => {
+        setError("");
+
+        try {
+            const res = await fetch(`${API_BASE}/deleteTest`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ Projekt: projekt, Testnamn: testnamn })
+            });
+
+            if (!res.ok) throw new Error("Delete test failed");
+
+            setDeleteTestConfirm(null);
+            await refreshData();
+        } catch (err) {
+            console.error("Delete test error:", err);
+            setError("Failed to delete test");
+        }
+    }, [API_BASE, refreshData]);
+
+    const renderAnalysText = useCallback((text) => {
         if (!text) return "";
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         const parts = text.split(urlRegex);
-        return parts.map((part, idx) => {
-            if (urlRegex.test(part)) {
-                return (
-                    <a key={idx} href={part} target="_blank" rel="noopener noreferrer">
-                        {part}
-                    </a>
-                );
-            } else {
-                return part;
-            }
-        });
-    };
+        return parts.map((part, idx) =>
+            urlRegex.test(part)
+                ? <a key={idx} href={part} target="_blank" rel="noopener noreferrer" className="analys-link">{part}</a>
+                : part
+        );
+    }, []);
 
-    // ------------------- Render -------------------
+    const columns = ["DATUM", "TYP", "TESTNAMN", "SYFTE", "ANALYS", "TESTARE", "ÅTGÄRD"];
+    const isFormValid = form.Testnamn.trim() && form.Syfte.trim() && selectedProject;
+
     return (
         <div className="app-container">
             <div className="header-row">
-                <button onClick={() => setActiveTab(activeTab === "newTest" ? "" : "newTest")} className="btn blue">
-                    <FilePlus size={16} style={{ marginRight: "6px" }} /> Nytt Test
+                <button
+                    onClick={() => setActiveTab(activeTab === "newTest" ? "" : "newTest")}
+                    className={`btn blue ${activeTab === "newTest" ? "active" : ""}`}
+                >
+                    <FilePlus size={16} /> Nytt Test
                 </button>
-                <button onClick={() => setActiveTab(activeTab === "addProject" ? "" : "addProject")} className="btn green">
-                    <FolderPlus size={16} style={{ marginRight: "6px" }} /> Skapa Projekt
+                <button
+                    onClick={() => setActiveTab(activeTab === "addProject" ? "" : "addProject")}
+                    className={`btn green ${activeTab === "addProject" ? "active" : ""}`}
+                >
+                    <FolderPlus size={16} /> Skapa Projekt
                 </button>
 
-                <span className="label">Projekt:</span>
-                <select className="dropdown" value={selectedProject} onChange={e => setSelectedProject(e.target.value)}>
-                    <option value="">Select Project</option>
-                    {projects.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
+                <div className="select-group">
+                    <span className="label">Projekt:</span>
+                    <select
+                        className="dropdown"
+                        value={selectedProject}
+                        onChange={e => setSelectedProject(e.target.value)}
+                        disabled={!projects.length}
+                    >
+                        <option value="">Välj Projekt</option>
+                        {projects.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    {selectedProject && (
+                        <Trash2
+                            size={18}
+                            className="icon-btn delete-btn"
+                            onClick={() => setDeleteConfirm(selectedProject)}
+                            title="Radera projekt"
+                        />
+                    )}
+                </div>
 
-                <span className="label">Testare:</span>
-                <select className="dropdown" value={form.Testare} onChange={e => setForm({ ...form, Testare: e.target.value })}>
-                    <option value="">Select Tester</option>
-                    {testers.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
+                <div className="select-group">
+                    <span className="label">Testare:</span>
+                    <select
+                        className="dropdown"
+                        value={form.Testare}
+                        onChange={e => setForm({ ...form, Testare: e.target.value })}
+                    >
+                        <option value="">Välj Testare</option>
+                        {testers.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                </div>
 
-                <button onClick={() => setActiveTab(activeTab === "kalkyl" ? "" : "kalkyl")} className="btn red">
-                    <Calculator size={16} style={{ marginRight: "6px" }} /> Last Kalkyl
+                <button
+                    onClick={() => setActiveTab(activeTab === "kalkyl" ? "" : "kalkyl")}
+                    className={`btn red ${activeTab === "kalkyl" ? "active" : ""}`}
+                >
+                    <Calculator size={16} /> Kalkyl
                 </button>
+
+                {selectedProject && (
+                    <button onClick={refreshData} className="btn gray" disabled={loading}>
+                        <RefreshCw size={16} className={loading ? "spinning" : ""} /> Uppdatera
+                    </button>
+                )}
             </div>
+
+            {error && (
+                <div className="error-banner">
+                    <XCircle size={16} />
+                    <span>{error}</span>
+                    <button onClick={() => setError("")} className="close-btn">×</button>
+                </div>
+            )}
 
             {activeTab === "newTest" && (
-                <div className="tab-container blue-tab">
-                    <NewTestForm form={form} setForm={setForm} handleSubmit={handleSubmit} isFormValid={isFormValid} />
-                </div>
+                <NewTestForm
+                    form={form}
+                    setForm={setForm}
+                    handleSubmit={handleSubmit}
+                    isFormValid={isFormValid}
+                    onCancel={() => setActiveTab("")}
+                />
             )}
+
             {activeTab === "addProject" && (
-                <div className="tab-container green-tab">
-                    <AddProjectForm newProjectName={newProjectName} setNewProjectName={setNewProjectName} handleAddProject={handleAddProject} />
-                </div>
+                <AddProjectForm
+                    newProjectName={newProjectName}
+                    setNewProjectName={setNewProjectName}
+                    handleAddProject={handleAddProject}
+                    onCancel={() => setActiveTab("")}
+                />
             )}
+
             {activeTab === "addAnalys" && analysRow && (
-                <div className="tab-container yellow-tab">
-                    <AddAnalysForm
-                        row={analysRow}
-                        analysText={analysText}
-                        setAnalysText={setAnalysText}
-                        handleSaveAnalys={handleSaveAnalys}
-                        cancel={() => { setActiveTab(""); setAnalysRow(null); }}
-                    />
-                </div>
+                <AddAnalysForm
+                    row={analysRow}
+                    analysText={analysText}
+                    setAnalysText={setAnalysText}
+                    handleSaveAnalys={handleSaveAnalys}
+                    cancel={() => {
+                        setActiveTab("");
+                        setAnalysRow(null);
+                        setAnalysText("");
+                    }}
+                />
             )}
+
             {activeTab === "kalkyl" && (
-                <div className="tab-container red-tab">
-                    <KalkylForm kalkyl={kalkyl} setKalkyl={setKalkyl} handleCopy={handleCopy} />
+                <KalkylForm
+                    kalkyl={calculatedKalkyl}
+                    setKalkyl={setKalkyl}
+                    handleCopy={handleCopy}
+                    handleAddKonfig={handleAddKonfig}
+                    onCancel={() => setActiveTab("")}
+                />
+            )}
+
+            {copied && (
+                <div className="copy-toast">
+                    <Check size={16} /> Kopierat!
                 </div>
             )}
 
-            {copied && <div className="copy-toast">Kopierat!</div>}
+            {deleteConfirm && (
+                <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <h3>Radera Projekt?</h3>
+                        <p>Är du säker på att du vill radera <strong>{deleteConfirm}</strong>?</p>
+                        <p className="warning-text">Detta kommer att radera alla tester i projektet. Denna åtgärd kan inte ångras.</p>
+                        <div className="modal-actions">
+                            <button onClick={() => setDeleteConfirm(null)} className="btn gray">
+                                <XCircle size={16} /> Avbryt
+                            </button>
+                            <button onClick={() => handleDeleteProject(deleteConfirm)} className="btn red">
+                                <Trash2 size={16} /> Radera Projekt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {deleteTestConfirm && (
+                <div className="modal-overlay" onClick={() => setDeleteTestConfirm(null)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <h3>Radera Test?</h3>
+                        <p>Är du säker på att du vill radera testet <strong>{deleteTestConfirm.TESTNAMN ?? deleteTestConfirm.testnamn}</strong>?</p>
+                        <p className="warning-text">Denna åtgärd kan inte ångras.</p>
+                        <div className="modal-actions">
+                            <button onClick={() => setDeleteTestConfirm(null)} className="btn gray">
+                                <XCircle size={16} /> Avbryt
+                            </button>
+                            <button
+                                onClick={() => handleDeleteTest(
+                                    deleteTestConfirm.PROJEKT ?? deleteTestConfirm.projekt ?? selectedProject,
+                                    deleteTestConfirm.TESTNAMN ?? deleteTestConfirm.testnamn
+                                )}
+                                className="btn red"
+                            >
+                                <Trash2 size={16} /> Radera Test
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="table-container">
-                <table>
-                    <thead>
-                    <tr>{columns.map(col => <th key={col}>{col}</th>)}</tr>
-                    </thead>
-                    <tbody>
-                    {loading ? (
-                        <tr><td colSpan={columns.length} className="center">Loading data...</td></tr>
-                    ) : data.length > 0 ? (
-                        data.map((row, i) => (
-                            <tr key={i} className={i % 2 === 0 ? "even" : "odd"}>
-                                {columns.map(col => (
-                                    <td key={col}>
-                                        {col === "ANALYS" ? (
-                                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                                <span>{renderAnalysText(row[col] ?? row[col.toLowerCase()] ?? "")}</span>
-                                                <Pencil
-                                                    size={16}
-                                                    className="icon-btn"
-                                                    onClick={() => {
-                                                        setAnalysRow(row);
-                                                        setAnalysText(row.ANALYS ?? "");
-                                                        setActiveTab("addAnalys");
-                                                    }}
-                                                />
-                                            </div>
-                                        ) : col === "TESTNAMN" ? (
-                                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                                <span>{row[col] ?? row[col.toLowerCase()] ?? ""}</span>
-                                                <Copy
-                                                    size={16}
-                                                    className="icon-btn"
-                                                    onClick={() => handleCopy(row[col] ?? row[col.toLowerCase()] ?? "")}
-                                                />
-                                            </div>
-                                        ) : (
-                                            row[col] ?? row[col.toLowerCase()] ?? ""
-                                        )}
-                                    </td>
-                                ))}
+                {!selectedProject ? (
+                    <div className="empty-state">
+                        <FolderPlus size={48} />
+                        <h3>Välj ett projekt för att komma igång</h3>
+                        <p>Skapa ett nytt projekt eller välj ett befintligt från listan ovan</p>
+                    </div>
+                ) : (
+                    <table>
+                        <thead>
+                        <tr>{columns.map(col => <th key={col}>{col}</th>)}</tr>
+                        </thead>
+                        <tbody>
+                        {loading ? (
+                            <tr>
+                                <td colSpan={columns.length} className="center">
+                                    <div className="loading-spinner" />
+                                    Laddar data...
+                                </td>
                             </tr>
-                        ))
-                    ) : (
-                        <tr><td colSpan={columns.length} className="center">No data available</td></tr>
-                    )}
-                    </tbody>
-                </table>
+                        ) : data.length ? (
+                            data.map((row, i) => (
+                                <tr key={i} className={i % 2 === 0 ? "even" : "odd"}>
+                                    {columns.map(col => (
+                                        <td key={col}>
+                                            {col === "ANALYS" ? (
+                                                <div className="cell-with-action">
+                                                    <span className="analys-text">
+                                                        {renderAnalysText(row[col] ?? row[col.toLowerCase()] ?? "")}
+                                                    </span>
+                                                    <Pencil
+                                                        size={16}
+                                                        className="icon-btn"
+                                                        onClick={() => {
+                                                            setAnalysRow(row);
+                                                            setAnalysText(row.ANALYS ?? row.analys ?? "");
+                                                            setActiveTab("addAnalys");
+                                                        }}
+                                                    />
+                                                </div>
+                                            ) : col === "TESTNAMN" ? (
+                                                <div className="cell-with-action">
+                                                    <span>{row[col] ?? row[col.toLowerCase()] ?? ""}</span>
+                                                    <Copy
+                                                        size={16}
+                                                        className="icon-btn"
+                                                        onClick={() => handleCopy(row[col] ?? row[col.toLowerCase()] ?? "")}
+                                                    />
+                                                </div>
+                                            ) : col === "ÅTGÄRD" ? (
+                                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                    <Trash2
+                                                        size={18}
+                                                        className="icon-btn delete-btn"
+                                                        onClick={() => setDeleteTestConfirm(row)}
+                                                        title="Radera test"
+                                                        style={{ cursor: 'pointer' }}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                row[col] ?? row[col.toLowerCase()] ?? ""
+                                            )}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={columns.length} className="center empty-state-row">
+                                    <FilePlus size={32} />
+                                    <p>Inga tester ännu. Skapa ditt första test!</p>
+                                </td>
+                            </tr>
+                        )}
+                        </tbody>
+                    </table>
+                )}
             </div>
+
+            <style>{`
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                
+                .app-container {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+                    padding: 24px;
+                    max-width: 1600px;
+                    margin: 0 auto;
+                    background: #f5f5f5;
+                    min-height: 100vh;
+                }
+
+                .header-row {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 12px;
+                    align-items: center;
+                    margin-bottom: 24px;
+                    padding: 20px;
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+
+                .select-group {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 10px 16px;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    background: #e0e0e0;
+                    color: #333;
+                }
+
+                .btn:hover:not(:disabled) {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                }
+
+                .btn:active:not(:disabled) {
+                    transform: translateY(0);
+                }
+
+                .btn:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+
+                .btn.blue { background: #2196F3; color: white; }
+                .btn.blue:hover:not(:disabled) { background: #1976D2; }
+                .btn.blue.active { background: #1565C0; }
+
+                .btn.green { background: #4CAF50; color: white; }
+                .btn.green:hover:not(:disabled) { background: #45a049; }
+                .btn.green.active { background: #388E3C; }
+
+                .btn.red { background: #f44336; color: white; }
+                .btn.red:hover:not(:disabled) { background: #da190b; }
+                .btn.red.active { background: #C62828; }
+
+                .btn.gray { background: #757575; color: white; }
+                .btn.gray:hover:not(:disabled) { background: #616161; }
+
+                .label {
+                    font-weight: 600;
+                    font-size: 14px;
+                    color: #555;
+                }
+
+                .dropdown {
+                    padding: 10px 12px;
+                    border: 2px solid #ddd;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    background: white;
+                    cursor: pointer;
+                    transition: border-color 0.2s;
+                    min-width: 180px;
+                }
+
+                .dropdown:hover { border-color: #2196F3; }
+                .dropdown:focus {
+                    outline: none;
+                    border-color: #2196F3;
+                    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+                }
+                .dropdown:disabled {
+                    background: #f5f5f5;
+                    cursor: not-allowed;
+                }
+
+                .error-banner {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px 16px;
+                    background: #ffebee;
+                    border: 1px solid #ef5350;
+                    border-radius: 6px;
+                    color: #c62828;
+                    margin-bottom: 16px;
+                    animation: slideIn 0.3s ease;
+                }
+
+                .error-banner .close-btn {
+                    margin-left: auto;
+                    background: none;
+                    border: none;
+                    font-size: 20px;
+                    cursor: pointer;
+                    color: #c62828;
+                    padding: 0 4px;
+                }
+
+                .form-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 16px;
+                    padding: 20px;
+                    background: white;
+                    border-radius: 8px;
+                    margin-bottom: 24px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    animation: slideIn 0.3s ease;
+                }
+
+                .form-grid label {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                    font-weight: 600;
+                    font-size: 14px;
+                    color: #555;
+                }
+
+                .form-grid input,
+                .form-grid select,
+                .form-grid textarea {
+                    padding: 10px 12px;
+                    border: 2px solid #ddd;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    transition: border-color 0.2s;
+                    font-family: inherit;
+                }
+
+                .form-grid input:focus,
+                .form-grid select:focus,
+                .form-grid textarea:focus {
+                    outline: none;
+                    border-color: #2196F3;
+                    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+                }
+
+                .form-grid textarea {
+                    resize: vertical;
+                    min-height: 100px;
+                }
+
+                .form-actions {
+                    grid-column: 1 / -1;
+                    display: flex;
+                    gap: 12px;
+                    justify-content: flex-end;
+                }
+
+                .table-container {
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    overflow: hidden;
+                }
+
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+
+                th {
+                    background: #f5f5f5;
+                    padding: 14px 12px;
+                    text-align: left;
+                    font-weight: 600;
+                    font-size: 13px;
+                    color: #555;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    border-bottom: 2px solid #ddd;
+                    position: sticky;
+                    top: 0;
+                    z-index: 10;
+                }
+                
+                th:last-child {
+                    width: 60px;
+                    text-align: center;
+                }
+
+                td {
+                    padding: 12px;
+                    border-bottom: 1px solid #eee;
+                    font-size: 14px;
+                    color: #333;
+                }
+                
+                td:last-child {
+                    text-align: center;
+                    width: 60px;
+                }
+
+                tr.even { background: #fafafa; }
+                tr.odd { background: white; }
+                tr:hover { background: #f0f7ff; }
+
+                .center {
+                    text-align: center;
+                    padding: 40px 20px;
+                    color: #666;
+                }
+
+                .cell-with-action {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 8px;
+                }
+
+                .analys-text {
+                    flex: 1;
+                    word-break: break-word;
+                }
+
+                .analys-link {
+                    color: #2196F3;
+                    text-decoration: none;
+                }
+
+                .analys-link:hover {
+                    text-decoration: underline;
+                }
+
+                .icon-btn {
+                    cursor: pointer;
+                    color: #757575;
+                    transition: color 0.2s;
+                    flex-shrink: 0;
+                }
+
+                .icon-btn:hover {
+                    color: #2196F3;
+                }
+
+                .delete-btn {
+                    color: #f44336;
+                    cursor: pointer;
+                    transition: color 0.2s;
+                }
+
+                .delete-btn:hover {
+                    color: #d32f2f;
+                }
+
+                .modal-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 2000;
+                    animation: fadeIn 0.2s ease;
+                }
+
+                .modal-content {
+                    background: white;
+                    padding: 24px;
+                    border-radius: 8px;
+                    max-width: 500px;
+                    width: 90%;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                    animation: scaleIn 0.2s ease;
+                }
+
+                .modal-content h3 {
+                    margin: 0 0 16px 0;
+                    color: #333;
+                    font-size: 20px;
+                }
+
+                .modal-content p {
+                    margin: 0 0 12px 0;
+                    color: #666;
+                    line-height: 1.5;
+                }
+
+                .warning-text {
+                    color: #f44336;
+                    font-weight: 500;
+                    font-size: 14px;
+                }
+
+                .modal-actions {
+                    display: flex;
+                    gap: 12px;
+                    justify-content: flex-end;
+                    margin-top: 24px;
+                }
+
+                .copy-toast {
+                    position: fixed;
+                    bottom: 24px;
+                    right: 24px;
+                    background: #323232;
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 6px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    animation: slideUp 0.3s ease;
+                    z-index: 1000;
+                }
+
+                .empty-state {
+                    text-align: center;
+                    padding: 60px 20px;
+                    color: #999;
+                }
+
+                .empty-state svg {
+                    color: #ddd;
+                    margin-bottom: 16px;
+                }
+
+                .empty-state h3 {
+                    color: #666;
+                    margin-bottom: 8px;
+                }
+
+                .empty-state p {
+                    color: #999;
+                    font-size: 14px;
+                }
+
+                .empty-state-row {
+                    padding: 40px 20px !important;
+                }
+
+                .empty-state-row svg {
+                    color: #ddd;
+                    display: block;
+                    margin: 0 auto 12px;
+                }
+
+                .empty-state-row p {
+                    color: #999;
+                    margin: 0;
+                }
+
+                .loading-spinner {
+                    display: inline-block;
+                    width: 20px;
+                    height: 20px;
+                    border: 3px solid #f3f3f3;
+                    border-top: 3px solid #2196F3;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin-right: 12px;
+                    vertical-align: middle;
+                }
+
+                .spinning {
+                    animation: spin 1s linear infinite;
+                }
+
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+
+                @keyframes scaleIn {
+                    from { 
+                        opacity: 0;
+                        transform: scale(0.9);
+                    }
+                    to { 
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                }
+
+                @keyframes slideIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                @keyframes slideUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                @media (max-width: 768px) {
+                    .app-container { padding: 12px; }
+                    .header-row { flex-direction: column; align-items: stretch; }
+                    .btn { justify-content: center; }
+                    .form-grid { grid-template-columns: 1fr; }
+                    .table-container { overflow-x: auto; }
+                    table { min-width: 800px; }
+                }
+            `}</style>
         </div>
     );
 }
 
-// ------------------- Forms -------------------
-function NewTestForm({ form, setForm, handleSubmit, isFormValid }) {
+function NewTestForm({ form, setForm, handleSubmit, isFormValid, onCancel }) {
     return (
         <div className="form-grid">
-            <label>Typ
+            <label>
+                Typ
                 <select value={form.Typ} onChange={e => setForm({ ...form, Typ: e.target.value })}>
-                    {["Referenstest","Verifikationstest","Belastningstest","Utmattningstest","Maxtest","Skapa"].map(t => <option key={t} value={t}>{t}</option>)}
+                    {["Referenstest","Verifikationstest","Belastningstest","Utmattningstest","Maxtest","Skapa"].map(t =>
+                        <option key={t} value={t}>{t}</option>
+                    )}
                 </select>
             </label>
-            <label>Testnamn
-                <input value={form.Testnamn} onChange={e => setForm({ ...form, Testnamn: e.target.value })}/>
+            <label>
+                Testnamn *
+                <input
+                    value={form.Testnamn}
+                    onChange={e => setForm({ ...form, Testnamn: e.target.value })}
+                    placeholder="Ange testnamn"
+                />
             </label>
-            <label>Syfte
-                <input value={form.Syfte} onChange={e => setForm({ ...form, Syfte: e.target.value })}/>
+            <label>
+                Syfte *
+                <input
+                    value={form.Syfte}
+                    onChange={e => setForm({ ...form, Syfte: e.target.value })}
+                    placeholder="Beskriv testets syfte"
+                />
             </label>
             <div className="form-actions">
-                <button onClick={handleSubmit} disabled={!isFormValid} className={isFormValid ? "btn green" : "btn disabled"}>
-                    <Save size={16} style={{ marginRight: "6px" }} /> Save
+                <button onClick={onCancel} className="btn gray">
+                    <XCircle size={16} /> Avbryt
+                </button>
+                <button
+                    onClick={handleSubmit}
+                    disabled={!isFormValid}
+                    className={isFormValid ? "btn green" : "btn"}
+                >
+                    <Save size={16} /> Spara Test
                 </button>
             </div>
         </div>
     );
 }
 
-function AddProjectForm({ newProjectName, setNewProjectName, handleAddProject }) {
+function AddProjectForm({ newProjectName, setNewProjectName, handleAddProject, onCancel }) {
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && newProjectName.trim()) {
+            handleAddProject();
+        }
+    };
+
     return (
         <div className="form-grid">
-            <label>Project Name
-                <input value={newProjectName} onChange={e => setNewProjectName(e.target.value)} />
+            <label>
+                Projektnamn *
+                <input
+                    value={newProjectName}
+                    onChange={e => setNewProjectName(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ange projektnamn"
+                    autoFocus
+                />
             </label>
             <div className="form-actions">
-                <button onClick={handleAddProject} className="btn green">
-                    <PlusCircle size={16} style={{ marginRight: "6px" }} /> Add
+                <button onClick={onCancel} className="btn gray">
+                    <XCircle size={16} /> Avbryt
+                </button>
+                <button
+                    onClick={handleAddProject}
+                    className="btn green"
+                    disabled={!newProjectName.trim()}
+                >
+                    <PlusCircle size={16} /> Skapa Projekt
                 </button>
             </div>
         </div>
@@ -313,63 +1054,94 @@ function AddProjectForm({ newProjectName, setNewProjectName, handleAddProject })
 function AddAnalysForm({ row, analysText, setAnalysText, handleSaveAnalys, cancel }) {
     return (
         <div className="form-grid">
-            <label>Analys for {row.TESTNAMN}
+            <label style={{ gridColumn: '1 / -1' }}>
+                Analys för {row.TESTNAMN ?? row.testnamn}
                 <textarea
                     value={analysText}
                     onChange={e => setAnalysText(e.target.value)}
                     rows={4}
-                    style={{ width: "100%" }}
+                    placeholder="Beskriv analysen..."
                 />
             </label>
             <div className="form-actions">
-                <button onClick={handleSaveAnalys} className="btn green">
-                    <Save size={16} style={{ marginRight: "6px" }} /> Save
+                <button onClick={cancel} className="btn gray">
+                    <XCircle size={16} /> Avbryt
                 </button>
-                <button onClick={cancel} className="btn red">
-                    <XCircle size={16} style={{ marginRight: "6px" }} /> Cancel
+                <button onClick={handleSaveAnalys} className="btn green">
+                    <Save size={16} /> Spara Analys
                 </button>
             </div>
         </div>
     );
 }
 
-function KalkylForm({ kalkyl, setKalkyl, handleCopy }) {
-    const calculateValues = (reqH, reqS, vu) => {
-        let h = Number(reqH) || 0;
-        let s = Number(reqS) || 0;
-        let v = Number(vu) || 0;
-
-        if (h && !s) s = parseFloat((h / 3600).toFixed(2));
-        else if (s && !h) h = parseFloat((s * 3600).toFixed(2));
-
-        let pacing = "";
-        if (v && s) pacing = (v / s).toFixed(2).replace(".", ",") + " s";
-
-        return { reqH: h || "", reqS: s || "", pacing };
-    };
-
-    useEffect(() => {
-        const { reqH, reqS, pacing } = calculateValues(kalkyl.reqH, kalkyl.reqS, kalkyl.vu);
-        setKalkyl(prev => ({ ...prev, reqH, reqS, pacing }));
-    }, [kalkyl.reqH, kalkyl.reqS, kalkyl.vu]);
-
+function KalkylForm({ kalkyl, setKalkyl, handleCopy, handleAddKonfig, onCancel }) {
     return (
         <div className="form-grid">
-            <label>Req/h
-                <input type="number" value={kalkyl.reqH} onChange={e => setKalkyl({ ...kalkyl, reqH: e.target.value, reqS: "" })} />
+            <label>
+                Req/h *
+                <input
+                    type="number"
+                    value={kalkyl.reqH}
+                    onChange={e => setKalkyl(prev => ({ ...prev, reqH: e.target.value }))}
+                    placeholder="Requests per timme"
+                />
             </label>
-            <label>Req/s
-                <input type="number" value={kalkyl.reqS} onChange={e => setKalkyl({ ...kalkyl, reqS: e.target.value, reqH: "" })} />
+            <label>
+                Req/s (beräknad)
+                <input
+                    type="text"
+                    value={kalkyl.reqS}
+                    readOnly
+                    style={{ background: '#f5f5f5' }}
+                />
             </label>
-            <label>Antal Vu
-                <input type="number" value={kalkyl.vu} onChange={e => setKalkyl({ ...kalkyl, vu: e.target.value })} />
+            <label>
+                Antal Vu *
+                <input
+                    type="number"
+                    value={kalkyl.vu}
+                    onChange={e => setKalkyl(prev => ({ ...prev, vu: e.target.value }))}
+                    placeholder="Antal virtuella användare"
+                />
             </label>
-            <label>Pacing
+            <label>
+                Pacing (beräknad)
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input value={kalkyl.pacing} readOnly />
-                    {kalkyl.pacing && <Copy size={16} className="icon-btn" onClick={() => handleCopy(kalkyl.pacing)} />}
+                    <input
+                        value={kalkyl.pacing}
+                        readOnly
+                        style={{ background: '#f5f5f5', flex: 1 }}
+                    />
+                    {kalkyl.pacing && (
+                        <Copy
+                            size={16}
+                            className="icon-btn"
+                            onClick={() => handleCopy(kalkyl.pacing)}
+                        />
+                    )}
                 </div>
             </label>
+            <label>
+                Skript
+                <input
+                    value={kalkyl.skript}
+                    onChange={e => setKalkyl(prev => ({ ...prev, skript: e.target.value }))}
+                    placeholder="Skriptnamn (valfritt)"
+                />
+            </label>
+            <div className="form-actions">
+                <button onClick={onCancel} className="btn gray">
+                    <XCircle size={16} /> Avbryt
+                </button>
+                <button
+                    onClick={handleAddKonfig}
+                    className="btn green"
+                    disabled={!kalkyl.reqH || !kalkyl.vu}
+                >
+                    <FilePlus size={16} /> Lägg till KONFIG
+                </button>
+            </div>
         </div>
     );
 }
