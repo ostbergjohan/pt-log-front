@@ -21,11 +21,6 @@ https://github.com/ostbergjohan/pt-log-backend is required.
   - Add or update analysis text for each test entry.
 - 👤 **Testers**
   - Tester names are loaded from `testers.json` and selectable in the UI.
-- 🔄 **Data Handling**
-  - Fetches and refreshes data from backend APIs.
-  - Inline editing and saving of analysis.
-- ✅ **Feedback**
-  - Shows loading states and “Copied!” toast notifications.
 
 ---
 
