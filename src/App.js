@@ -19,6 +19,7 @@ export default function App() {
     const [copied, setCopied] = useState(false);
     const [testers] = useState(testersData);
     const [kalkyl, setKalkyl] = useState({ reqH: "", reqS: "", vu: "", pacing: "", skript: "" });
+    const [generellKonfig, setGenerellKonfig] = useState({ beskrivning: "" });
     const [error, setError] = useState("");
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [deleteTestConfirm, setDeleteTestConfirm] = useState(null);
@@ -196,7 +197,7 @@ export default function App() {
 
         setError("");
         const newRow = {
-            TESTNAMN: "KONFIG",
+            TESTNAMN: "PACING",
             REQH: kalkyl.reqH,
             REQS: calculatedKalkyl.reqS,
             VU: kalkyl.vu,
@@ -223,6 +224,37 @@ export default function App() {
             setError("Failed to add configuration");
         }
     }, [kalkyl, calculatedKalkyl, selectedProject, form.Testare, API_BASE, refreshData]);
+
+    const handleAddGenerellKonfig = useCallback(async () => {
+        if (!generellKonfig.beskrivning.trim() || !selectedProject) {
+            setError("Vänligen fyll i beskrivning");
+            return;
+        }
+
+        setError("");
+        const payload = {
+            BESKRIVNING: generellKonfig.beskrivning.trim(),
+            PROJEKT: selectedProject,
+            TESTARE: form.Testare
+        };
+
+        try {
+            const res = await fetch(`${API_BASE}/addGenerellKonfig`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error("Add generell konfig failed");
+
+            setGenerellKonfig({ beskrivning: "" });
+            setActiveTab("");
+            await refreshData();
+        } catch (err) {
+            console.error("AddGenerellKonfig error:", err);
+            setError("Failed to add generell konfig");
+        }
+    }, [generellKonfig, selectedProject, form.Testare, API_BASE, refreshData]);
 
     const handleDeleteProject = useCallback(async (projectName) => {
         setError("");
@@ -336,10 +368,17 @@ export default function App() {
                 </div>
 
                 <button
-                    onClick={() => setActiveTab(activeTab === "kalkyl" ? "" : "kalkyl")}
-                    className={`btn red ${activeTab === "kalkyl" ? "active" : ""}`}
+                    onClick={() => setActiveTab(activeTab === "konfig" ? "" : "konfig")}
+                    className={`btn red ${activeTab === "konfig" ? "active" : ""}`}
                 >
-                    <Calculator size={16} /> Kalkyl
+                    <Calculator size={16} /> Beräkna Pacing
+                </button>
+
+                <button
+                    onClick={() => setActiveTab(activeTab === "generellKonfig" ? "" : "generellKonfig")}
+                    className={`btn red ${activeTab === "generellKonfig" ? "active" : ""}`}
+                >
+                    <PlusCircle size={16} /> Generell Konfig
                 </button>
 
                 {selectedProject && (
@@ -390,12 +429,21 @@ export default function App() {
                 />
             )}
 
-            {activeTab === "kalkyl" && (
-                <KalkylForm
+            {activeTab === "konfig" && (
+                <KonfigForm
                     kalkyl={calculatedKalkyl}
                     setKalkyl={setKalkyl}
                     handleCopy={handleCopy}
                     handleAddKonfig={handleAddKonfig}
+                    onCancel={() => setActiveTab("")}
+                />
+            )}
+
+            {activeTab === "generellKonfig" && (
+                <GenerellKonfigForm
+                    generellKonfig={generellKonfig}
+                    setGenerellKonfig={setGenerellKonfig}
+                    handleAddGenerellKonfig={handleAddGenerellKonfig}
                     onCancel={() => setActiveTab("")}
                 />
             )}
@@ -767,6 +815,8 @@ export default function App() {
 
                 .analys-text {
                     flex: 1;
+                    word-.analys-text {
+                    flex: 1;
                     word-break: break-word;
                 }
 
@@ -1075,7 +1125,7 @@ function AddAnalysForm({ row, analysText, setAnalysText, handleSaveAnalys, cance
     );
 }
 
-function KalkylForm({ kalkyl, setKalkyl, handleCopy, handleAddKonfig, onCancel }) {
+function KonfigForm({ kalkyl, setKalkyl, handleCopy, handleAddKonfig, onCancel }) {
     return (
         <div className="form-grid">
             <label>
@@ -1140,6 +1190,34 @@ function KalkylForm({ kalkyl, setKalkyl, handleCopy, handleAddKonfig, onCancel }
                     disabled={!kalkyl.reqH || !kalkyl.vu}
                 >
                     <FilePlus size={16} /> Lägg till KONFIG
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function GenerellKonfigForm({ generellKonfig, setGenerellKonfig, handleAddGenerellKonfig, onCancel }) {
+    return (
+        <div className="form-grid">
+            <label style={{ gridColumn: '1 / -1' }}>
+                Konfigurationsbeskrivning *
+                <textarea
+                    value={generellKonfig.beskrivning}
+                    onChange={e => setGenerellKonfig({ beskrivning: e.target.value })}
+                    rows={4}
+                    placeholder="Beskriv konfigurationen (t.ex. Applikationsserver: Tomcat 9.0.45, JVM: OpenJDK 11, Memory: 4GB)"
+                />
+            </label>
+            <div className="form-actions">
+                <button onClick={onCancel} className="btn gray">
+                    <XCircle size={16} /> Avbryt
+                </button>
+                <button
+                    onClick={handleAddGenerellKonfig}
+                    className="btn green"
+                    disabled={!generellKonfig.beskrivning.trim()}
+                >
+                    <FilePlus size={16} /> Lägg till Konfig
                 </button>
             </div>
         </div>
