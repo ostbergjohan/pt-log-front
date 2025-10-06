@@ -19,8 +19,6 @@ https://github.com/ostbergjohan/pt-log-backend is required.
   - Copy test names with a single click.
 - 📝 **Analysis**
   - Add or update analysis text for each test entry.
-- 👤 **Testers**
-  - Tester names are loaded from `testers.json` and selectable in the UI.
 
 ---
 
