@@ -197,25 +197,49 @@ export default function App() {
 
     const calculatedKalkyl = useMemo(() => {
         const reqH = Number(kalkyl.reqH) || 0;
+        const reqS = Number(kalkyl.reqS) || 0;
         const vu = Number(kalkyl.vu) || 0;
-        const reqS = reqH ? (reqH / 3600).toFixed(2) : "";
-        const pacing = (reqH && vu) ? (reqH / vu).toFixed(2) : "";
-        return { ...kalkyl, reqS, pacing };
+
+        let calculatedReqH = reqH;
+        let calculatedReqS = reqS;
+        let pacing = "";
+
+        // If reqH is filled, calculate reqS
+        if (reqH > 0 && kalkyl.reqH) {
+            calculatedReqS = parseFloat((reqH / 3600).toFixed(4));
+        }
+        // If reqS is filled (and reqH is not), calculate reqH
+        else if (reqS > 0 && kalkyl.reqS) {
+            calculatedReqH = parseFloat((reqS * 3600).toFixed(2));
+        }
+
+        // Calculate pacing if we have the necessary values
+        const finalReqH = calculatedReqH || reqH || (reqS * 3600);
+        if (finalReqH > 0 && vu > 0) {
+            pacing = (finalReqH / vu).toFixed(2);
+        }
+
+        return {
+            ...kalkyl,
+            reqH: calculatedReqH.toString() || kalkyl.reqH,
+            reqS: calculatedReqS.toString() || kalkyl.reqS,
+            pacing
+        };
     }, [kalkyl]);
 
     const handleAddKonfig = useCallback(async () => {
-        const reqH = Number(kalkyl.reqH);
+        const reqH = Number(kalkyl.reqH) || (Number(kalkyl.reqS) * 3600);
         const vu = Number(kalkyl.vu);
 
-        if (!reqH || !vu || !selectedProject) {
-            setError("Please fill in required fields (Req/h and Antal Vu)");
+        if ((!kalkyl.reqH && !kalkyl.reqS) || !vu || !selectedProject) {
+            setError("Vänligen fyll i Req/h eller Req/s samt Antal Vu");
             return;
         }
 
         setError("");
         const newRow = {
             TESTNAMN: "PACING",
-            REQH: kalkyl.reqH,
+            REQH: reqH.toString(),
             REQS: calculatedKalkyl.reqS,
             VU: kalkyl.vu,
             PACING: calculatedKalkyl.pacing,
@@ -706,24 +730,29 @@ function AddAnalysForm({ row, analysText, setAnalysText, handleSaveAnalys, cance
 }
 
 function KonfigForm({ kalkyl, setKalkyl, handleCopy, handleAddKonfig, onCancel }) {
+    // Display the calculated values
+    const displayReqH = kalkyl.reqH || (kalkyl.reqS ? (Number(kalkyl.reqS) * 3600).toFixed(2) : "");
+    const displayReqS = kalkyl.reqS || (kalkyl.reqH ? (Number(kalkyl.reqH) / 3600).toFixed(4) : "");
+
     return (
         <div className="form-grid">
             <label>
-                Req/h *
+                Req/h
                 <input
                     type="number"
-                    value={kalkyl.reqH}
-                    onChange={e => setKalkyl(prev => ({ ...prev, reqH: e.target.value }))}
+                    value={displayReqH}
+                    onChange={e => setKalkyl(prev => ({ ...prev, reqH: e.target.value, reqS: "" }))}
                     placeholder="Requests per timme"
                 />
             </label>
             <label>
-                Req/s (beräknad)
+                Req/s
                 <input
-                    type="text"
-                    value={kalkyl.reqS}
-                    readOnly
-                    style={{ background: '#f5f5f5' }}
+                    type="number"
+                    step="0.0001"
+                    value={displayReqS}
+                    onChange={e => setKalkyl(prev => ({ ...prev, reqS: e.target.value, reqH: "" }))}
+                    placeholder="Requests per sekund"
                 />
             </label>
             <label>
@@ -742,6 +771,7 @@ function KonfigForm({ kalkyl, setKalkyl, handleCopy, handleAddKonfig, onCancel }
                         value={kalkyl.pacing}
                         readOnly
                         style={{ background: '#f5f5f5', flex: 1 }}
+                        placeholder="Beräknas automatiskt"
                     />
                     {kalkyl.pacing && (
                         <Copy
@@ -767,7 +797,7 @@ function KonfigForm({ kalkyl, setKalkyl, handleCopy, handleAddKonfig, onCancel }
                 <button
                     onClick={handleAddKonfig}
                     className="btn green"
-                    disabled={!kalkyl.reqH || !kalkyl.vu}
+                    disabled={(!kalkyl.reqH && !kalkyl.reqS) || !kalkyl.vu}
                 >
                     <FilePlus size={16} /> Lägg till KONFIG
                 </button>
