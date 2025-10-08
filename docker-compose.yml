@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ../pt-log-backend
+      dockerfile: Containerfile
+    container_name: pt-log-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=h2
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/opt/app/data/ptlog
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom -Dspring.output.ansi.enabled=always
+    volumes:
+      - backend-data:/opt/app/data
+    networks:
+      - pt-log-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: pt-log-frontend
+    ports:
+      - "3001:3001"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+    depends_on:
+      - backend
+    networks:
+      - pt-log-network
+    restart: unless-stopped
+
+networks:
+  pt-log-network:
+    driver: bridge
+
+volumes:
+  backend-data:
+    driver: local
