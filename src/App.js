@@ -1,13 +1,148 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2 } from "lucide-react";
+import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Languages } from "lucide-react";
 import testersData from "./testers.json";
 import config from "./config";
 import "./App.css";
 
+const translations = {
+    sv: {
+        newTest: "Nytt Test",
+        createProject: "Skapa Projekt",
+        project: "Projekt",
+        selectProject: "Välj Projekt",
+        tester: "Testare",
+        selectTester: "Välj Testare",
+        calculatePacing: "Beräkna Pacing",
+        generalConfig: "Generell Konfig",
+        refresh: "Uppdatera",
+        type: "Typ",
+        testName: "Testnamn",
+        purpose: "Syfte",
+        cancel: "Avbryt",
+        saveTest: "Spara Test",
+        projectName: "Projektnamn",
+        enterProjectName: "Ange projektnamn",
+        analysisFor: "Analys för",
+        saveAnalysis: "Spara Analys",
+        describeAnalysis: "Beskriv analysen...",
+        numberOfVu: "Antal Vu",
+        calculated: "beräknad",
+        script: "Skript",
+        scriptName: "Skriptnamn (valfritt)",
+        addConfig: "Lägg till KONFIG",
+        configDescription: "Konfigurationsbeskrivning",
+        describeConfig: "Beskriv konfigurationen (t.ex. Applikationsserver: Tomcat 9.0.45, JVM: OpenJDK 11, Memory: 4GB)",
+        addConfigBtn: "Lägg till Konfig",
+        deleteProject: "Radera Projekt",
+        deleteProjectConfirm: "Är du säker på att du vill radera",
+        deleteProjectWarning: "Detta kommer att radera alla tester i projektet. Denna åtgärd kan inte ångras.",
+        deleteTest: "Radera Test",
+        deleteTestConfirm: "Är du säker på att du vill radera testet",
+        deleteTestWarning: "Denna åtgärd kan inte ångras.",
+        selectProjectToStart: "Välj ett projekt för att komma igång",
+        createOrSelect: "Skapa ett nytt projekt eller välj ett befintligt från listan ovan",
+        loadingData: "Laddar data...",
+        noTestsYet: "Inga tester ännu. Skapa ditt första test!",
+        copied: "Kopierat!",
+        enterTestName: "Ange testnamn",
+        describeTestPurpose: "Beskriv testets syfte",
+        virtualUsers: "Antal virtuella användare",
+        calculatedAutomatically: "Beräknas automatiskt",
+        copyProjectLink: "Kopiera länk till projekt",
+        deleteProjectBtn: "Radera projekt",
+        deleteTestBtn: "Radera test",
+        fillReqAndVu: "Vänligen fyll i Req/h eller Req/s samt Antal Vu",
+        fillDescription: "Vänligen fyll i beskrivning",
+        date: "DATUM",
+        colType: "TYP",
+        colTestName: "TESTNAMN",
+        colPurpose: "SYFTE",
+        colAnalysis: "ANALYS",
+        colTester: "TESTARE",
+        action: "ÅTGÄRD",
+        pacingTestName: "PACING",
+        configTestName: "KONFIG",
+        testTypes: {
+            reference: "Referenstest",
+            verification: "Verifikationstest",
+            load: "Belastningstest",
+            endurance: "Utmattningstest",
+            max: "Maxtest",
+            create: "Skapa"
+        }
+    },
+    en: {
+        newTest: "New Test",
+        createProject: "Create Project",
+        project: "Project",
+        selectProject: "Select Project",
+        tester: "Tester",
+        selectTester: "Select Tester",
+        calculatePacing: "Calculate Pacing",
+        generalConfig: "General Config",
+        refresh: "Refresh",
+        type: "Type",
+        testName: "Test Name",
+        purpose: "Purpose",
+        cancel: "Cancel",
+        saveTest: "Save Test",
+        projectName: "Project Name",
+        enterProjectName: "Enter project name",
+        analysisFor: "Analysis for",
+        saveAnalysis: "Save Analysis",
+        describeAnalysis: "Describe the analysis...",
+        numberOfVu: "Number of VUs",
+        calculated: "calculated",
+        script: "Script",
+        scriptName: "Script name (optional)",
+        addConfig: "Add CONFIG",
+        configDescription: "Configuration Description",
+        describeConfig: "Describe the configuration (e.g., Application server: Tomcat 9.0.45, JVM: OpenJDK 11, Memory: 4GB)",
+        addConfigBtn: "Add Config",
+        deleteProject: "Delete Project",
+        deleteProjectConfirm: "Are you sure you want to delete",
+        deleteProjectWarning: "This will delete all tests in the project. This action cannot be undone.",
+        deleteTest: "Delete Test",
+        deleteTestConfirm: "Are you sure you want to delete the test",
+        deleteTestWarning: "This action cannot be undone.",
+        selectProjectToStart: "Select a project to get started",
+        createOrSelect: "Create a new project or select an existing one from the list above",
+        loadingData: "Loading data...",
+        noTestsYet: "No tests yet. Create your first test!",
+        copied: "Copied!",
+        enterTestName: "Enter test name",
+        describeTestPurpose: "Describe the test purpose",
+        virtualUsers: "Number of virtual users",
+        calculatedAutomatically: "Calculated automatically",
+        copyProjectLink: "Copy project link",
+        deleteProjectBtn: "Delete project",
+        deleteTestBtn: "Delete test",
+        fillReqAndVu: "Please fill in Req/h or Req/s and Number of VUs",
+        fillDescription: "Please fill in description",
+        date: "DATE",
+        colType: "TYPE",
+        colTestName: "TEST NAME",
+        colPurpose: "PURPOSE",
+        colAnalysis: "ANALYSIS",
+        colTester: "TESTER",
+        action: "ACTION",
+        pacingTestName: "PACING",
+        configTestName: "CONFIG",
+        testTypes: {
+            reference: "Reference Test",
+            verification: "Verification Test",
+            load: "Load Test",
+            endurance: "Endurance Test",
+            max: "Max Test",
+            create: "Create"
+        }
+    }
+};
+
 export default function App() {
+    const [language, setLanguage] = useState(() => localStorage.getItem('language') || 'en');
     const [projects, setProjects] = useState([]);
     const [selectedProject, setSelectedProject] = useState(() => {
-        // Check URL parameters first
         const urlParams = new URLSearchParams(window.location.search);
         const projectFromUrl = urlParams.get('project');
         return projectFromUrl || localStorage.getItem('lastProject') || "";
@@ -17,7 +152,7 @@ export default function App() {
     const [activeTab, setActiveTab] = useState("");
     const [form, setForm] = useState(() => {
         const savedTester = localStorage.getItem('lastTester');
-        return { Typ: "Referenstest", Testnamn: "", Syfte: "", Testare: savedTester || "Johan" };
+        return { Typ: "reference", Testnamn: "", Syfte: "", Testare: savedTester || "Johan" };
     });
     const [newProjectName, setNewProjectName] = useState("");
     const [analysRow, setAnalysRow] = useState(null);
@@ -31,7 +166,12 @@ export default function App() {
     const [deleteTestConfirm, setDeleteTestConfirm] = useState(null);
     const [dbInfo, setDbInfo] = useState(null);
 
+    const t = translations[language];
     const API_BASE = config.API_BASE;
+
+    useEffect(() => {
+        localStorage.setItem('language', language);
+    }, [language]);
 
     useEffect(() => {
         fetch(`${API_BASE}/dbinfo`)
@@ -43,12 +183,10 @@ export default function App() {
     useEffect(() => {
         if (selectedProject) {
             localStorage.setItem('lastProject', selectedProject);
-            // Update URL without reloading the page
             const url = new URL(window.location);
             url.searchParams.set('project', selectedProject);
             window.history.pushState({}, '', url);
         } else {
-            // Remove project param if no project selected
             const url = new URL(window.location);
             url.searchParams.delete('project');
             window.history.pushState({}, '', url);
@@ -119,7 +257,7 @@ export default function App() {
             if (!res.ok) throw new Error("Insert failed");
 
             setForm(prev => ({
-                Typ: "Referenstest",
+                Typ: "reference",
                 Testnamn: "",
                 Syfte: "",
                 Testare: prev.Testare
@@ -212,16 +350,12 @@ export default function App() {
         let calculatedReqS = reqS;
         let pacing = "";
 
-        // If reqH is filled, calculate reqS
         if (reqH > 0 && kalkyl.reqH) {
             calculatedReqS = parseFloat((reqH / 3600).toFixed(4));
-        }
-        // If reqS is filled (and reqH is not), calculate reqH
-        else if (reqS > 0 && kalkyl.reqS) {
+        } else if (reqS > 0 && kalkyl.reqS) {
             calculatedReqH = parseFloat((reqS * 3600).toFixed(2));
         }
 
-        // Calculate pacing if we have the necessary values
         const finalReqH = calculatedReqH || reqH || (reqS * 3600);
         if (finalReqH > 0 && vu > 0) {
             pacing = (finalReqH / vu).toFixed(2);
@@ -240,13 +374,13 @@ export default function App() {
         const vu = Number(kalkyl.vu);
 
         if ((!kalkyl.reqH && !kalkyl.reqS) || !vu || !selectedProject) {
-            setError("Vänligen fyll i Req/h eller Req/s samt Antal Vu");
+            setError(t.fillReqAndVu);
             return;
         }
 
         setError("");
         const newRow = {
-            TESTNAMN: "PACING",
+            TESTNAMN: t.pacingTestName,
             REQH: reqH.toString(),
             REQS: calculatedKalkyl.reqS,
             VU: kalkyl.vu,
@@ -272,11 +406,11 @@ export default function App() {
             console.error("AddKonfig error:", err);
             setError("Failed to add configuration");
         }
-    }, [kalkyl, calculatedKalkyl, selectedProject, form.Testare, API_BASE, refreshData]);
+    }, [kalkyl, calculatedKalkyl, selectedProject, form.Testare, API_BASE, refreshData, t.fillReqAndVu, t.pacingTestName]);
 
     const handleAddGenerellKonfig = useCallback(async () => {
         if (!generellKonfig.beskrivning.trim() || !selectedProject) {
-            setError("Vänligen fyll i beskrivning");
+            setError(t.fillDescription);
             return;
         }
 
@@ -284,7 +418,8 @@ export default function App() {
         const payload = {
             BESKRIVNING: generellKonfig.beskrivning.trim(),
             PROJEKT: selectedProject,
-            TESTARE: form.Testare
+            TESTARE: form.Testare,
+            TESTNAMN: t.configTestName
         };
 
         try {
@@ -303,7 +438,7 @@ export default function App() {
             console.error("AddGenerellKonfig error:", err);
             setError("Failed to add generell konfig");
         }
-    }, [generellKonfig, selectedProject, form.Testare, API_BASE, refreshData]);
+    }, [generellKonfig, selectedProject, form.Testare, API_BASE, refreshData, t.fillDescription, t.configTestName]);
 
     const handleDeleteProject = useCallback(async (projectName) => {
         setError("");
@@ -364,34 +499,41 @@ export default function App() {
         );
     }, []);
 
-    const columns = ["DATUM", "TYP", "TESTNAMN", "SYFTE", "ANALYS", "TESTARE", "ÅTGÄRD"];
+    const columns = [t.date, t.colType, t.colTestName, t.colPurpose, t.colAnalysis, t.colTester, t.action];
     const isFormValid = form.Testnamn.trim() && form.Syfte.trim() && selectedProject;
 
     return (
         <div className="app-container">
             <div className="header-row">
                 <button
+                    onClick={() => setLanguage(language === 'sv' ? 'en' : 'sv')}
+                    className="btn gray"
+                    title={language === 'sv' ? 'Switch to English' : 'Byt till Svenska'}
+                >
+                    <Languages size={16} /> {language === 'sv' ? 'EN' : 'SV'}
+                </button>
+                <button
                     onClick={() => setActiveTab(activeTab === "newTest" ? "" : "newTest")}
                     className={`btn blue ${activeTab === "newTest" ? "active" : ""}`}
                 >
-                    <FilePlus size={16} /> Nytt Test
+                    <FilePlus size={16} /> {t.newTest}
                 </button>
                 <button
                     onClick={() => setActiveTab(activeTab === "addProject" ? "" : "addProject")}
                     className={`btn green ${activeTab === "addProject" ? "active" : ""}`}
                 >
-                    <FolderPlus size={16} /> Skapa Projekt
+                    <FolderPlus size={16} /> {t.createProject}
                 </button>
 
                 <div className="select-group">
-                    <span className="label">Projekt:</span>
+                    <span className="label">{t.project}:</span>
                     <select
                         className="dropdown"
                         value={selectedProject}
                         onChange={e => setSelectedProject(e.target.value)}
                         disabled={!projects.length}
                     >
-                        <option value="">Välj Projekt</option>
+                        <option value="">{t.selectProject}</option>
                         {projects.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                     {selectedProject && (
@@ -400,26 +542,26 @@ export default function App() {
                                 size={18}
                                 className="icon-btn"
                                 onClick={() => handleCopy(window.location.href)}
-                                title="Kopiera länk till projekt"
+                                title={t.copyProjectLink}
                             />
                             <Trash2
                                 size={18}
                                 className="icon-btn delete-btn"
                                 onClick={() => setDeleteConfirm(selectedProject)}
-                                title="Radera projekt"
+                                title={t.deleteProjectBtn}
                             />
                         </>
                     )}
                 </div>
 
                 <div className="select-group">
-                    <span className="label">Testare:</span>
+                    <span className="label">{t.tester}:</span>
                     <select
                         className="dropdown"
                         value={form.Testare}
                         onChange={e => setForm({ ...form, Testare: e.target.value })}
                     >
-                        <option value="">Välj Testare</option>
+                        <option value="">{t.selectTester}</option>
                         {testers.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                 </div>
@@ -428,19 +570,19 @@ export default function App() {
                     onClick={() => setActiveTab(activeTab === "konfig" ? "" : "konfig")}
                     className={`btn red ${activeTab === "konfig" ? "active" : ""}`}
                 >
-                    <Calculator size={16} /> Beräkna Pacing
+                    <Calculator size={16} /> {t.calculatePacing}
                 </button>
 
                 <button
                     onClick={() => setActiveTab(activeTab === "generellKonfig" ? "" : "generellKonfig")}
                     className={`btn red ${activeTab === "generellKonfig" ? "active" : ""}`}
                 >
-                    <PlusCircle size={16} /> Generell Konfig
+                    <PlusCircle size={16} /> {t.generalConfig}
                 </button>
 
                 {selectedProject && (
                     <button onClick={refreshData} className="btn gray" disabled={loading}>
-                        <RefreshCw size={16} className={loading ? "spinning" : ""} /> Uppdatera
+                        <RefreshCw size={16} className={loading ? "spinning" : ""} /> {t.refresh}
                     </button>
                 )}
             </div>
@@ -460,6 +602,7 @@ export default function App() {
                     handleSubmit={handleSubmit}
                     isFormValid={isFormValid}
                     onCancel={() => setActiveTab("")}
+                    t={t}
                 />
             )}
 
@@ -469,6 +612,7 @@ export default function App() {
                     setNewProjectName={setNewProjectName}
                     handleAddProject={handleAddProject}
                     onCancel={() => setActiveTab("")}
+                    t={t}
                 />
             )}
 
@@ -483,6 +627,7 @@ export default function App() {
                         setAnalysRow(null);
                         setAnalysText("");
                     }}
+                    t={t}
                 />
             )}
 
@@ -493,6 +638,7 @@ export default function App() {
                     handleCopy={handleCopy}
                     handleAddKonfig={handleAddKonfig}
                     onCancel={() => setActiveTab("")}
+                    t={t}
                 />
             )}
 
@@ -502,27 +648,28 @@ export default function App() {
                     setGenerellKonfig={setGenerellKonfig}
                     handleAddGenerellKonfig={handleAddGenerellKonfig}
                     onCancel={() => setActiveTab("")}
+                    t={t}
                 />
             )}
 
             {copied && (
                 <div className="copy-toast">
-                    <Check size={16} /> Kopierat!
+                    <Check size={16} /> {t.copied}
                 </div>
             )}
 
             {deleteConfirm && (
                 <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <h3>Radera Projekt?</h3>
-                        <p>Är du säker på att du vill radera <strong>{deleteConfirm}</strong>?</p>
-                        <p className="warning-text">Detta kommer att radera alla tester i projektet. Denna åtgärd kan inte ångras.</p>
+                        <h3>{t.deleteProject}?</h3>
+                        <p>{t.deleteProjectConfirm} <strong>{deleteConfirm}</strong>?</p>
+                        <p className="warning-text">{t.deleteProjectWarning}</p>
                         <div className="modal-actions">
                             <button onClick={() => setDeleteConfirm(null)} className="btn gray">
-                                <XCircle size={16} /> Avbryt
+                                <XCircle size={16} /> {t.cancel}
                             </button>
                             <button onClick={() => handleDeleteProject(deleteConfirm)} className="btn red">
-                                <Trash2 size={16} /> Radera Projekt
+                                <Trash2 size={16} /> {t.deleteProject}
                             </button>
                         </div>
                     </div>
@@ -532,12 +679,12 @@ export default function App() {
             {deleteTestConfirm && (
                 <div className="modal-overlay" onClick={() => setDeleteTestConfirm(null)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <h3>Radera Test?</h3>
-                        <p>Är du säker på att du vill radera testet <strong>{deleteTestConfirm.TESTNAMN ?? deleteTestConfirm.testnamn}</strong>?</p>
-                        <p className="warning-text">Denna åtgärd kan inte ångras.</p>
+                        <h3>{t.deleteTest}?</h3>
+                        <p>{t.deleteTestConfirm} <strong>{deleteTestConfirm.TESTNAMN ?? deleteTestConfirm.testnamn}</strong>?</p>
+                        <p className="warning-text">{t.deleteTestWarning}</p>
                         <div className="modal-actions">
                             <button onClick={() => setDeleteTestConfirm(null)} className="btn gray">
-                                <XCircle size={16} /> Avbryt
+                                <XCircle size={16} /> {t.cancel}
                             </button>
                             <button
                                 onClick={() => handleDeleteTest(
@@ -546,7 +693,7 @@ export default function App() {
                                 )}
                                 className="btn red"
                             >
-                                <Trash2 size={16} /> Radera Test
+                                <Trash2 size={16} /> {t.deleteTest}
                             </button>
                         </div>
                     </div>
@@ -557,8 +704,8 @@ export default function App() {
                 {!selectedProject ? (
                     <div className="empty-state">
                         <FolderPlus size={48} />
-                        <h3>Välj ett projekt för att komma igång</h3>
-                        <p>Skapa ett nytt projekt eller välj ett befintligt från listan ovan</p>
+                        <h3>{t.selectProjectToStart}</h3>
+                        <p>{t.createOrSelect}</p>
                     </div>
                 ) : (
                     <table>
@@ -570,60 +717,73 @@ export default function App() {
                             <tr>
                                 <td colSpan={columns.length} className="center">
                                     <div className="loading-spinner" />
-                                    Laddar data...
+                                    {t.loadingData}
                                 </td>
                             </tr>
                         ) : data.length ? (
                             data.map((row, i) => (
                                 <tr key={i} className={i % 2 === 0 ? "even" : "odd"}>
-                                    {columns.map(col => (
-                                        <td key={col}>
-                                            {col === "ANALYS" ? (
-                                                <div className="cell-with-action">
-                                                    <span className="analys-text">
-                                                        {renderAnalysText(row[col] ?? row[col.toLowerCase()] ?? "")}
-                                                    </span>
-                                                    <Pencil
-                                                        size={16}
-                                                        className="icon-btn"
-                                                        onClick={() => {
-                                                            setAnalysRow(row);
-                                                            setAnalysText(row.ANALYS ?? row.analys ?? "");
-                                                            setActiveTab("addAnalys");
-                                                        }}
-                                                    />
-                                                </div>
-                                            ) : col === "TESTNAMN" ? (
-                                                <div className="cell-with-action">
-                                                    <span>{row[col] ?? row[col.toLowerCase()] ?? ""}</span>
-                                                    <Copy
-                                                        size={16}
-                                                        className="icon-btn"
-                                                        onClick={() => handleCopy(row[col] ?? row[col.toLowerCase()] ?? "")}
-                                                    />
-                                                </div>
-                                            ) : col === "ÅTGÄRD" ? (
-                                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                                    <Trash2
-                                                        size={18}
-                                                        className="icon-btn delete-btn"
-                                                        onClick={() => setDeleteTestConfirm(row)}
-                                                        title="Radera test"
-                                                        style={{ cursor: 'pointer' }}
-                                                    />
-                                                </div>
-                                            ) : (
-                                                row[col] ?? row[col.toLowerCase()] ?? ""
-                                            )}
-                                        </td>
-                                    ))}
+                                    {columns.map(col => {
+                                        // Map translated column names back to database column names
+                                        let dbCol;
+                                        if (col === t.date) dbCol = "DATUM";
+                                        else if (col === t.action) dbCol = "ÅTGÄRD";
+                                        else if (col === t.colType) dbCol = "TYP";
+                                        else if (col === t.colTestName) dbCol = "TESTNAMN";
+                                        else if (col === t.colPurpose) dbCol = "SYFTE";
+                                        else if (col === t.colAnalysis) dbCol = "ANALYS";
+                                        else if (col === t.colTester) dbCol = "TESTARE";
+                                        else dbCol = col;
+
+                                        return (
+                                            <td key={col}>
+                                                {dbCol === "ÅTGÄRD" ? (
+                                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                        <Trash2
+                                                            size={18}
+                                                            className="icon-btn delete-btn"
+                                                            onClick={() => setDeleteTestConfirm(row)}
+                                                            title={t.deleteTestBtn}
+                                                            style={{ cursor: 'pointer' }}
+                                                        />
+                                                    </div>
+                                                ) : dbCol === "ANALYS" ? (
+                                                    <div className="cell-with-action">
+                                                        <span className="analys-text">
+                                                            {renderAnalysText(row[dbCol] ?? row[dbCol.toLowerCase()] ?? "")}
+                                                        </span>
+                                                        <Pencil
+                                                            size={16}
+                                                            className="icon-btn"
+                                                            onClick={() => {
+                                                                setAnalysRow(row);
+                                                                setAnalysText(row.ANALYS ?? row.analys ?? "");
+                                                                setActiveTab("addAnalys");
+                                                            }}
+                                                        />
+                                                    </div>
+                                                ) : dbCol === "TESTNAMN" ? (
+                                                    <div className="cell-with-action">
+                                                        <span>{row[dbCol] ?? row[dbCol.toLowerCase()] ?? ""}</span>
+                                                        <Copy
+                                                            size={16}
+                                                            className="icon-btn"
+                                                            onClick={() => handleCopy(row[dbCol] ?? row[dbCol.toLowerCase()] ?? "")}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    row[dbCol] ?? row[dbCol.toLowerCase()] ?? ""
+                                                )}
+                                            </td>
+                                        );
+                                    })}
                                 </tr>
                             ))
                         ) : (
                             <tr>
                                 <td colSpan={columns.length} className="center empty-state-row">
                                     <FilePlus size={32} />
-                                    <p>Inga tester ännu. Skapa ditt första test!</p>
+                                    <p>{t.noTestsYet}</p>
                                 </td>
                             </tr>
                         )}
@@ -637,50 +797,59 @@ export default function App() {
     );
 }
 
-function NewTestForm({ form, setForm, handleSubmit, isFormValid, onCancel }) {
+function NewTestForm({ form, setForm, handleSubmit, isFormValid, onCancel, t }) {
+    const testTypeOptions = [
+        { key: 'reference', label: t.testTypes.reference },
+        { key: 'verification', label: t.testTypes.verification },
+        { key: 'load', label: t.testTypes.load },
+        { key: 'endurance', label: t.testTypes.endurance },
+        { key: 'max', label: t.testTypes.max },
+        { key: 'create', label: t.testTypes.create }
+    ];
+
     return (
         <div className="form-grid">
             <label>
-                Typ
+                {t.type}
                 <select value={form.Typ} onChange={e => setForm({ ...form, Typ: e.target.value })}>
-                    {["Referenstest","Verifikationstest","Belastningstest","Utmattningstest","Maxtest","Skapa"].map(t =>
-                        <option key={t} value={t}>{t}</option>
+                    {testTypeOptions.map(option =>
+                        <option key={option.key} value={option.key}>{option.label}</option>
                     )}
                 </select>
             </label>
             <label>
-                Testnamn *
+                {t.testName} *
                 <input
                     value={form.Testnamn}
                     onChange={e => setForm({ ...form, Testnamn: e.target.value })}
-                    placeholder="Ange testnamn"
+                    placeholder={t.enterTestName}
                 />
             </label>
             <label>
-                Syfte *
+                {t.purpose} *
                 <input
                     value={form.Syfte}
                     onChange={e => setForm({ ...form, Syfte: e.target.value })}
-                    placeholder="Beskriv testets syfte"
+                    placeholder={t.describeTestPurpose}
                 />
             </label>
             <div className="form-actions">
                 <button onClick={onCancel} className="btn gray">
-                    <XCircle size={16} /> Avbryt
+                    <XCircle size={16} /> {t.cancel}
                 </button>
                 <button
                     onClick={handleSubmit}
                     disabled={!isFormValid}
                     className={isFormValid ? "btn green" : "btn"}
                 >
-                    <Save size={16} /> Spara Test
+                    <Save size={16} /> {t.saveTest}
                 </button>
             </div>
         </div>
     );
 }
 
-function AddProjectForm({ newProjectName, setNewProjectName, handleAddProject, onCancel }) {
+function AddProjectForm({ newProjectName, setNewProjectName, handleAddProject, onCancel, t }) {
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && newProjectName.trim()) {
             handleAddProject();
@@ -690,57 +859,56 @@ function AddProjectForm({ newProjectName, setNewProjectName, handleAddProject, o
     return (
         <div className="form-grid">
             <label>
-                Projektnamn *
+                {t.projectName} *
                 <input
                     value={newProjectName}
                     onChange={e => setNewProjectName(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Ange projektnamn"
+                    placeholder={t.enterProjectName}
                     autoFocus
                 />
             </label>
             <div className="form-actions">
                 <button onClick={onCancel} className="btn gray">
-                    <XCircle size={16} /> Avbryt
+                    <XCircle size={16} /> {t.cancel}
                 </button>
                 <button
                     onClick={handleAddProject}
                     className="btn green"
                     disabled={!newProjectName.trim()}
                 >
-                    <PlusCircle size={16} /> Skapa Projekt
+                    <PlusCircle size={16} /> {t.createProject}
                 </button>
             </div>
         </div>
     );
 }
 
-function AddAnalysForm({ row, analysText, setAnalysText, handleSaveAnalys, cancel }) {
+function AddAnalysForm({ row, analysText, setAnalysText, handleSaveAnalys, cancel, t }) {
     return (
         <div className="form-grid">
             <label style={{ gridColumn: '1 / -1' }}>
-                Analys för {row.TESTNAMN ?? row.testnamn}
+                {t.analysisFor} {row.TESTNAMN ?? row.testnamn}
                 <textarea
                     value={analysText}
                     onChange={e => setAnalysText(e.target.value)}
                     rows={4}
-                    placeholder="Beskriv analysen..."
+                    placeholder={t.describeAnalysis}
                 />
             </label>
             <div className="form-actions">
                 <button onClick={cancel} className="btn gray">
-                    <XCircle size={16} /> Avbryt
+                    <XCircle size={16} /> {t.cancel}
                 </button>
                 <button onClick={handleSaveAnalys} className="btn green">
-                    <Save size={16} /> Spara Analys
+                    <Save size={16} /> {t.saveAnalysis}
                 </button>
             </div>
         </div>
     );
 }
 
-function KonfigForm({ kalkyl, setKalkyl, handleCopy, handleAddKonfig, onCancel }) {
-    // Display the calculated values
+function KonfigForm({ kalkyl, setKalkyl, handleCopy, handleAddKonfig, onCancel, t }) {
     const displayReqH = kalkyl.reqH || (kalkyl.reqS ? (Number(kalkyl.reqS) * 3600).toFixed(2) : "");
     const displayReqS = kalkyl.reqS || (kalkyl.reqH ? (Number(kalkyl.reqH) / 3600).toFixed(4) : "");
 
@@ -766,22 +934,22 @@ function KonfigForm({ kalkyl, setKalkyl, handleCopy, handleAddKonfig, onCancel }
                 />
             </label>
             <label>
-                Antal Vu *
+                {t.numberOfVu} *
                 <input
                     type="number"
                     value={kalkyl.vu}
                     onChange={e => setKalkyl(prev => ({ ...prev, vu: e.target.value }))}
-                    placeholder="Antal virtuella användare"
+                    placeholder={t.virtualUsers}
                 />
             </label>
             <label>
-                Pacing (beräknad)
+                Pacing ({t.calculated})
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <input
                         value={kalkyl.pacing}
                         readOnly
                         style={{ background: '#f5f5f5', flex: 1 }}
-                        placeholder="Beräknas automatiskt"
+                        placeholder={t.calculatedAutomatically}
                     />
                     {kalkyl.pacing && (
                         <Copy
@@ -793,51 +961,51 @@ function KonfigForm({ kalkyl, setKalkyl, handleCopy, handleAddKonfig, onCancel }
                 </div>
             </label>
             <label>
-                Skript
+                {t.script}
                 <input
                     value={kalkyl.skript}
                     onChange={e => setKalkyl(prev => ({ ...prev, skript: e.target.value }))}
-                    placeholder="Skriptnamn (valfritt)"
+                    placeholder={t.scriptName}
                 />
             </label>
             <div className="form-actions">
                 <button onClick={onCancel} className="btn gray">
-                    <XCircle size={16} /> Avbryt
+                    <XCircle size={16} /> {t.cancel}
                 </button>
                 <button
                     onClick={handleAddKonfig}
                     className="btn green"
                     disabled={(!kalkyl.reqH && !kalkyl.reqS) || !kalkyl.vu}
                 >
-                    <FilePlus size={16} /> Lägg till KONFIG
+                    <FilePlus size={16} /> {t.addConfig}
                 </button>
             </div>
         </div>
     );
 }
 
-function GenerellKonfigForm({ generellKonfig, setGenerellKonfig, handleAddGenerellKonfig, onCancel }) {
+function GenerellKonfigForm({ generellKonfig, setGenerellKonfig, handleAddGenerellKonfig, onCancel, t }) {
     return (
         <div className="form-grid">
             <label style={{ gridColumn: '1 / -1' }}>
-                Konfigurationsbeskrivning *
+                {t.configDescription} *
                 <textarea
                     value={generellKonfig.beskrivning}
                     onChange={e => setGenerellKonfig({ beskrivning: e.target.value })}
                     rows={4}
-                    placeholder="Beskriv konfigurationen (t.ex. Applikationsserver: Tomcat 9.0.45, JVM: OpenJDK 11, Memory: 4GB)"
+                    placeholder={t.describeConfig}
                 />
             </label>
             <div className="form-actions">
                 <button onClick={onCancel} className="btn gray">
-                    <XCircle size={16} /> Avbryt
+                    <XCircle size={16} /> {t.cancel}
                 </button>
                 <button
                     onClick={handleAddGenerellKonfig}
                     className="btn green"
                     disabled={!generellKonfig.beskrivning.trim()}
                 >
-                    <FilePlus size={16} /> Lägg till Konfig
+                    <FilePlus size={16} /> {t.addConfigBtn}
                 </button>
             </div>
         </div>
