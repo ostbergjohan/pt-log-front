@@ -29,8 +29,16 @@ export default function App() {
     const [error, setError] = useState("");
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [deleteTestConfirm, setDeleteTestConfirm] = useState(null);
+    const [dbInfo, setDbInfo] = useState(null);
 
     const API_BASE = config.API_BASE;
+
+    useEffect(() => {
+        fetch(`${API_BASE}/dbinfo`)
+            .then(res => res.json())
+            .then(info => setDbInfo(info))
+            .catch(err => console.error("Failed to load DB info", err));
+    }, [API_BASE]);
 
     useEffect(() => {
         if (selectedProject) {
@@ -623,6 +631,8 @@ export default function App() {
                     </table>
                 )}
             </div>
+
+            <DbInfoFooter dbInfo={dbInfo} apiBase={API_BASE} />
         </div>
     );
 }
@@ -830,6 +840,37 @@ function GenerellKonfigForm({ generellKonfig, setGenerellKonfig, handleAddGenere
                     <FilePlus size={16} /> Lägg till Konfig
                 </button>
             </div>
+        </div>
+    );
+}
+
+function DbInfoFooter({ dbInfo, apiBase }) {
+    if (!dbInfo) return null;
+
+    return (
+        <div className="db-info-footer">
+            <span className="db-info-item">
+                <span className="db-label">Backend:</span>
+                <span className="db-value">{apiBase}</span>
+            </span>
+            <span className="db-info-item">
+                <span className="db-label">Database:</span>
+                <span className="db-value">{dbInfo.type}</span>
+            </span>
+            {dbInfo.schema && (
+                <span className="db-info-item">
+                    <span className="db-label">Schema:</span>
+                    <span className="db-value">{dbInfo.schema}</span>
+                </span>
+            )}
+            {dbInfo.url && (
+                <span className="db-info-item">
+                    <span className="db-label">DB URL:</span>
+                    <span className="db-value" title={dbInfo.url}>
+                        {dbInfo.url.length > 50 ? dbInfo.url.substring(0, 50) + '...' : dbInfo.url}
+                    </span>
+                </span>
+            )}
         </div>
     );
 }
