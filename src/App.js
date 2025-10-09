@@ -235,7 +235,7 @@ export default function App() {
                 console.error("Failed to load projects", err);
                 setError("Failed to load projects");
             });
-
+        
         // Also fetch archived projects to update counter
         fetch(`${API_BASE}/populateArkiverade`)
             .then(res => res.json())
@@ -381,7 +381,7 @@ export default function App() {
             const json = await projectsRes.json();
             const projectsList = Array.isArray(json) ? json : [];
             setProjects(projectsList);
-
+            
             setNewProjectName("");
             setActiveTab("");
             setSelectedProject(trimmedName);
@@ -446,9 +446,10 @@ export default function App() {
             calculatedReqH = parseFloat((reqS * 3600).toFixed(2));
         }
 
-        const finalReqH = calculatedReqH || reqH || (reqS * 3600);
-        if (finalReqH > 0 && vu > 0) {
-            pacing = (finalReqH / vu).toFixed(2);
+        const finalReqS = calculatedReqS || reqS;
+        if (finalReqS > 0 && vu > 0) {
+            // Pacing = time between requests = VU / Req/s
+            pacing = (vu / finalReqS).toFixed(2);
         }
 
         return {
@@ -608,7 +609,7 @@ export default function App() {
             }
 
             setArchiveConfirm(null);
-
+            
             if (showArchived) {
                 fetchArchivedProjects();
             }
@@ -915,7 +916,7 @@ export default function App() {
                                 </button>
                             )}
                         </div>
-
+                        
                         {!selectedArchivedProject ? (
                             <div className="empty-state">
                                 <Archive size={48} />
