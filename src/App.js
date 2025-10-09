@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Languages } from "lucide-react";
+import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Languages, Archive } from "lucide-react";
 import testersData from "./testers.json";
 import config from "./config";
 import "./App.css";
@@ -62,6 +62,18 @@ const translations = {
         action: "ÅTGÄRD",
         pacingTestName: "PACING",
         configTestName: "KONFIG",
+        archiveProject: "Arkivera Projekt",
+        archiveProjectBtn: "Arkivera projekt",
+        archiveProjectConfirm: "Är du säker på att du vill arkivera",
+        archiveProjectWarning: "Projektet kommer att döljas från listan men kan återställas senare.",
+        showArchived: "Arkiverade",
+        archived: "Arkiverad",
+        restoreProject: "Återställ Projekt",
+        restoreProjectBtn: "Återställ projekt",
+        restoreProjectConfirm: "Är du säker på att du vill återställa",
+        restoreProjectWarning: "Projektet kommer att visas i den aktiva listan igen.",
+        selectArchivedProject: "Välj ett arkiverat projekt för att komma igång",
+        noArchivedProjects: "Inga arkiverade projekt",
         testTypes: {
             reference: "Referenstest",
             verification: "Verifikationstest",
@@ -128,6 +140,18 @@ const translations = {
         action: "ACTION",
         pacingTestName: "PACING",
         configTestName: "CONFIG",
+        archiveProject: "Archive Project",
+        archiveProjectBtn: "Archive project",
+        archiveProjectConfirm: "Are you sure you want to archive",
+        archiveProjectWarning: "The project will be hidden from the list but can be restored later.",
+        showArchived: "Archived",
+        archived: "Archived",
+        restoreProject: "Restore Project",
+        restoreProjectBtn: "Restore project",
+        restoreProjectConfirm: "Are you sure you want to restore",
+        restoreProjectWarning: "The project will be shown in the active list again.",
+        selectArchivedProject: "Select an archived project to get started",
+        noArchivedProjects: "No archived projects",
         testTypes: {
             reference: "Reference Test",
             verification: "Verification Test",
@@ -164,6 +188,12 @@ export default function App() {
     const [error, setError] = useState("");
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [deleteTestConfirm, setDeleteTestConfirm] = useState(null);
+    const [archiveConfirm, setArchiveConfirm] = useState(null);
+    const [showArchived, setShowArchived] = useState(false);
+    const [archivedProjects, setArchivedProjects] = useState([]);
+    const [selectedArchivedProject, setSelectedArchivedProject] = useState("");
+    const [archivedData, setArchivedData] = useState([]);
+    const [loadingArchived, setLoadingArchived] = useState(false);
     const [dbInfo, setDbInfo] = useState(null);
 
     const t = translations[language];
@@ -205,7 +235,61 @@ export default function App() {
                 console.error("Failed to load projects", err);
                 setError("Failed to load projects");
             });
+
+        // Also fetch archived projects to update counter
+        fetch(`${API_BASE}/populateArkiverade`)
+            .then(res => res.json())
+            .then(json => Array.isArray(json) ? setArchivedProjects(json) : setArchivedProjects([]))
+            .catch(err => console.error("Failed to load archived projects count", err));
     }, [API_BASE]);
+
+    const fetchArchivedProjects = useCallback(() => {
+        fetch(`${API_BASE}/populateArkiverade`)
+            .then(res => res.json())
+            .then(json => Array.isArray(json) ? setArchivedProjects(json) : setArchivedProjects([]))
+            .catch(err => {
+                console.error("Failed to load archived projects", err);
+                setError("Failed to load archived projects");
+            });
+    }, [API_BASE]);
+
+    useEffect(() => {
+        if (showArchived) {
+            fetchArchivedProjects();
+        }
+    }, [showArchived, fetchArchivedProjects]);
+
+    const refreshArchivedData = useCallback(() => {
+        if (!selectedArchivedProject) return Promise.resolve();
+        setLoadingArchived(true);
+        setError("");
+
+        return fetch(`${API_BASE}/getData?projekt=${encodeURIComponent(selectedArchivedProject)}`)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return res.json();
+            })
+            .then(rawData => {
+                const formatted = rawData.map(item => {
+                    const d = new Date(item.DATUM || item.Datum);
+                    const dateStr = d.toISOString().split("T")[0];
+                    const timeStr = d.toTimeString().slice(0, 5);
+                    return { ...item, DATUM: `${dateStr} ${timeStr}` };
+                });
+                setArchivedData(formatted);
+            })
+            .catch(err => {
+                console.error("Failed to load archived data", err);
+                setError("Failed to load archived project data");
+            })
+            .finally(() => setLoadingArchived(false));
+    }, [selectedArchivedProject, API_BASE]);
+
+    useEffect(() => {
+        if (showArchived) {
+            refreshArchivedData();
+        }
+    }, [showArchived, refreshArchivedData]);
 
     const refreshData = useCallback(() => {
         if (!selectedProject) return Promise.resolve();
@@ -289,9 +373,15 @@ export default function App() {
 
             if (!res.ok) throw new Error("Create project failed");
 
+            // Small delay to ensure database is updated
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            // Refresh the projects list
             const projectsRes = await fetch(`${API_BASE}/populate`);
             const json = await projectsRes.json();
-            setProjects(Array.isArray(json) ? json : []);
+            const projectsList = Array.isArray(json) ? json : [];
+            setProjects(projectsList);
+
             setNewProjectName("");
             setActiveTab("");
             setSelectedProject(trimmedName);
@@ -452,13 +542,23 @@ export default function App() {
 
             if (!res.ok) throw new Error("Delete project failed");
 
+            // Refresh both regular and archived project lists
             const projectsRes = await fetch(`${API_BASE}/populate`);
             const json = await projectsRes.json();
             setProjects(Array.isArray(json) ? json : []);
 
+            if (showArchived) {
+                fetchArchivedProjects();
+            }
+
             if (selectedProject === projectName) {
                 setSelectedProject("");
                 setData([]);
+            }
+
+            if (selectedArchivedProject === projectName) {
+                setSelectedArchivedProject("");
+                setArchivedData([]);
             }
 
             setDeleteConfirm(null);
@@ -466,7 +566,7 @@ export default function App() {
             console.error("Delete project error:", err);
             setError("Failed to delete project");
         }
-    }, [API_BASE, selectedProject]);
+    }, [API_BASE, selectedProject, selectedArchivedProject, showArchived, fetchArchivedProjects]);
 
     const handleDeleteTest = useCallback(async (projekt, testnamn) => {
         setError("");
@@ -487,6 +587,62 @@ export default function App() {
             setError("Failed to delete test");
         }
     }, [API_BASE, refreshData]);
+
+    const handleArchiveProject = useCallback(async (projectName) => {
+        setError("");
+
+        try {
+            const res = await fetch(`${API_BASE}/arkivera?namn=${encodeURIComponent(projectName)}`, {
+                method: "POST"
+            });
+
+            if (!res.ok) throw new Error("Archive project failed");
+
+            const projectsRes = await fetch(`${API_BASE}/populate`);
+            const json = await projectsRes.json();
+            setProjects(Array.isArray(json) ? json : []);
+
+            if (selectedProject === projectName) {
+                setSelectedProject("");
+                setData([]);
+            }
+
+            setArchiveConfirm(null);
+
+            if (showArchived) {
+                fetchArchivedProjects();
+            }
+        } catch (err) {
+            console.error("Archive project error:", err);
+            setError("Failed to archive project");
+        }
+    }, [API_BASE, selectedProject, showArchived, fetchArchivedProjects]);
+
+    const handleRestoreProject = useCallback(async (projectName) => {
+        setError("");
+
+        try {
+            const res = await fetch(`${API_BASE}/restore?namn=${encodeURIComponent(projectName)}`, {
+                method: "POST"
+            });
+
+            if (!res.ok) throw new Error("Restore project failed");
+
+            const projectsRes = await fetch(`${API_BASE}/populate`);
+            const json = await projectsRes.json();
+            setProjects(Array.isArray(json) ? json : []);
+
+            fetchArchivedProjects();
+
+            if (selectedArchivedProject === projectName) {
+                setSelectedArchivedProject("");
+                setArchivedData([]);
+            }
+        } catch (err) {
+            console.error("Restore project error:", err);
+            setError("Failed to restore project");
+        }
+    }, [API_BASE, selectedArchivedProject, fetchArchivedProjects]);
 
     const renderAnalysText = useCallback((text) => {
         if (!text) return "";
@@ -537,20 +693,13 @@ export default function App() {
                         {projects.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                     {selectedProject && (
-                        <>
-                            <Copy
-                                size={18}
-                                className="icon-btn"
-                                onClick={() => handleCopy(window.location.href)}
-                                title={t.copyProjectLink}
-                            />
-                            <Trash2
-                                size={18}
-                                className="icon-btn delete-btn"
-                                onClick={() => setDeleteConfirm(selectedProject)}
-                                title={t.deleteProjectBtn}
-                            />
-                        </>
+                        <Archive
+                            size={18}
+                            className="icon-btn"
+                            onClick={() => setArchiveConfirm(selectedProject)}
+                            title={t.archiveProjectBtn}
+                            style={{ color: '#ff8c00', cursor: 'pointer' }}
+                        />
                     )}
                 </div>
 
@@ -585,6 +734,13 @@ export default function App() {
                         <RefreshCw size={16} className={loading ? "spinning" : ""} /> {t.refresh}
                     </button>
                 )}
+
+                <button
+                    onClick={() => setShowArchived(!showArchived)}
+                    className={`btn purple ${showArchived ? "active" : ""}`}
+                >
+                    <Archive size={16} /> {t.showArchived} ({archivedProjects.length})
+                </button>
             </div>
 
             {error && (
@@ -700,8 +856,156 @@ export default function App() {
                 </div>
             )}
 
+            {archiveConfirm && (
+                <div className="modal-overlay" onClick={() => setArchiveConfirm(null)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <h3>{t.archiveProject}?</h3>
+                        <p>{t.archiveProjectConfirm} <strong>{archiveConfirm}</strong>?</p>
+                        <p className="warning-text" style={{color: '#ff8c00'}}>{t.archiveProjectWarning}</p>
+                        <div className="modal-actions">
+                            <button onClick={() => setArchiveConfirm(null)} className="btn gray">
+                                <XCircle size={16} /> {t.cancel}
+                            </button>
+                            <button onClick={() => handleArchiveProject(archiveConfirm)} className="btn orange">
+                                <Archive size={16} /> {t.archiveProject}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="table-container">
-                {!selectedProject ? (
+                {showArchived ? (
+                    <>
+                        <div className="header-row" style={{marginBottom: '20px'}}>
+                            <h2 style={{margin: 0}}>{t.showArchived}</h2>
+                            <div className="select-group">
+                                <span className="label">{t.project}:</span>
+                                <select
+                                    className="dropdown"
+                                    value={selectedArchivedProject}
+                                    onChange={e => setSelectedArchivedProject(e.target.value)}
+                                    disabled={!archivedProjects.length}
+                                >
+                                    <option value="">{t.selectProject}</option>
+                                    {archivedProjects.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
+                                {selectedArchivedProject && (
+                                    <>
+                                        <button
+                                            onClick={() => handleRestoreProject(selectedArchivedProject)}
+                                            className="btn green"
+                                            style={{marginLeft: '8px', padding: '4px 12px', fontSize: '14px'}}
+                                            title={t.restoreProjectBtn}
+                                        >
+                                            <RefreshCw size={14} /> {t.restoreProject}
+                                        </button>
+                                        <Trash2
+                                            size={18}
+                                            className="icon-btn delete-btn"
+                                            onClick={() => setDeleteConfirm(selectedArchivedProject)}
+                                            title={t.deleteProjectBtn}
+                                        />
+                                    </>
+                                )}
+                            </div>
+                            {selectedArchivedProject && (
+                                <button onClick={refreshArchivedData} className="btn gray" disabled={loadingArchived}>
+                                    <RefreshCw size={16} className={loadingArchived ? "spinning" : ""} /> {t.refresh}
+                                </button>
+                            )}
+                        </div>
+
+                        {!selectedArchivedProject ? (
+                            <div className="empty-state">
+                                <Archive size={48} />
+                                <h3>{archivedProjects.length === 0 ? t.noArchivedProjects : t.selectArchivedProject}</h3>
+                                {archivedProjects.length > 0 && <p>{t.createOrSelect}</p>}
+                            </div>
+                        ) : (
+                            <table>
+                                <thead>
+                                <tr>{columns.map(col => <th key={col}>{col}</th>)}</tr>
+                                </thead>
+                                <tbody>
+                                {loadingArchived ? (
+                                    <tr>
+                                        <td colSpan={columns.length} className="center">
+                                            <div className="loading-spinner" />
+                                            {t.loadingData}
+                                        </td>
+                                    </tr>
+                                ) : archivedData.length ? (
+                                    archivedData.map((row, i) => (
+                                        <tr key={i} className={i % 2 === 0 ? "even" : "odd"}>
+                                            {columns.map(col => {
+                                                let dbCol;
+                                                if (col === t.date) dbCol = "DATUM";
+                                                else if (col === t.action) dbCol = "ÅTGÄRD";
+                                                else if (col === t.colType) dbCol = "TYP";
+                                                else if (col === t.colTestName) dbCol = "TESTNAMN";
+                                                else if (col === t.colPurpose) dbCol = "SYFTE";
+                                                else if (col === t.colAnalysis) dbCol = "ANALYS";
+                                                else if (col === t.colTester) dbCol = "TESTARE";
+                                                else dbCol = col;
+
+                                                return (
+                                                    <td key={col}>
+                                                        {dbCol === "ÅTGÄRD" ? (
+                                                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                                <Trash2
+                                                                    size={18}
+                                                                    className="icon-btn delete-btn"
+                                                                    onClick={() => setDeleteTestConfirm(row)}
+                                                                    title={t.deleteTestBtn}
+                                                                    style={{ cursor: 'pointer' }}
+                                                                />
+                                                            </div>
+                                                        ) : dbCol === "ANALYS" ? (
+                                                            <div className="cell-with-action">
+                                                                <span className="analys-text">
+                                                                    {renderAnalysText(row[dbCol] ?? row[dbCol.toLowerCase()] ?? "")}
+                                                                </span>
+                                                                <Pencil
+                                                                    size={16}
+                                                                    className="icon-btn"
+                                                                    onClick={() => {
+                                                                        setAnalysRow(row);
+                                                                        setAnalysText(row.ANALYS ?? row.analys ?? "");
+                                                                        setActiveTab("addAnalys");
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        ) : dbCol === "TESTNAMN" ? (
+                                                            <div className="cell-with-action">
+                                                                <span>{row[dbCol] ?? row[dbCol.toLowerCase()] ?? ""}</span>
+                                                                <Copy
+                                                                    size={16}
+                                                                    className="icon-btn"
+                                                                    onClick={() => handleCopy(row[dbCol] ?? row[dbCol.toLowerCase()] ?? "")}
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            row[dbCol] ?? row[dbCol.toLowerCase()] ?? ""
+                                                        )}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={columns.length} className="center empty-state-row">
+                                            <FilePlus size={32} />
+                                            <p>{t.noTestsYet}</p>
+                                        </td>
+                                    </tr>
+                                )}
+                                </tbody>
+                            </table>
+                        )}
+                    </>
+                ) : !selectedProject ? (
                     <div className="empty-state">
                         <FolderPlus size={48} />
                         <h3>{t.selectProjectToStart}</h3>
@@ -724,7 +1028,6 @@ export default function App() {
                             data.map((row, i) => (
                                 <tr key={i} className={i % 2 === 0 ? "even" : "odd"}>
                                     {columns.map(col => {
-                                        // Map translated column names back to database column names
                                         let dbCol;
                                         if (col === t.date) dbCol = "DATUM";
                                         else if (col === t.action) dbCol = "ÅTGÄRD";

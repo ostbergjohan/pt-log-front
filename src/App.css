@@ -485,3 +485,21 @@ tr:hover { background: #f0f7ff; }
 .app-container {
   padding-bottom: 40px;
 }
+
+.btn.orange {
+  background: #ff8c00;
+  color: white;
+}
+
+.btn.orange:hover:not(:disabled) {
+  background: #e67e00;
+}
+
+.btn.purple {
+  background: #9b59b6;
+  color: white;
+}
+
+.btn.purple:hover:not(:disabled) {
+  background: #8e44ad;
+}
