@@ -1,4 +1,3 @@
-markdown
 # PT-Log 2.0
 
 ![Screenshot](https://github.com/ostbergjohan/pt-log-backend/raw/main/image/screenshot.png)
