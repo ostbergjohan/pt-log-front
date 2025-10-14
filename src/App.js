@@ -41,6 +41,16 @@ export default function App() {
     const t = translations[language];
     const API_BASE = config.API_BASE;
 
+    const languageOptions = [
+        { code: 'en', name: 'English', flag: '🇬🇧' },
+        { code: 'sv', name: 'Svenska', flag: '🇸🇪' },
+        { code: 'fr', name: 'Français', flag: '🇫🇷' },
+        { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+        { code: 'da', name: 'Dansk', flag: '🇩🇰' },
+        { code: 'no', name: 'Norsk', flag: '🇳🇴' },
+        { code: 'fi', name: 'Suomi', flag: '🇫🇮' }
+    ];
+
     useEffect(() => {
         localStorage.setItem('language', language);
     }, [language]);
@@ -504,24 +514,31 @@ export default function App() {
     return (
         <div className="app-container">
             <div className="header-row">
-                <button
-                    onClick={() => setLanguage(language === 'sv' ? 'en' : 'sv')}
-                    className="btn gray"
-                    title={language === 'sv' ? 'Switch to English' : 'Byt till Svenska'}
-                >
-                    <Languages size={16} /> {language === 'sv' ? 'EN' : 'SV'}
-                </button>
+                <div className="select-group">
+                    <select
+                        className="dropdown"
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value)}
+                        style={{minWidth: '70px'}}
+                    >
+                        {languageOptions.map(lang => (
+                            <option key={lang.code} value={lang.code}>
+                                {lang.code.toUpperCase()}
+                            </option>
+                        ))}
+                    </select>
+                </div>
                 <button
                     onClick={() => setActiveTab(activeTab === "newTest" ? "" : "newTest")}
                     className={`btn blue ${activeTab === "newTest" ? "active" : ""}`}
                 >
-                    <FilePlus size={16} /> {t.newTest}
+                    <FilePlus size={16}/> {t.newTest}
                 </button>
                 <button
                     onClick={() => setActiveTab(activeTab === "addProject" ? "" : "addProject")}
                     className={`btn green ${activeTab === "addProject" ? "active" : ""}`}
                 >
-                    <FolderPlus size={16} /> {t.createProject}
+                    <FolderPlus size={16}/> {t.createProject}
                 </button>
 
                 <div className="select-group">
@@ -541,7 +558,7 @@ export default function App() {
                             className="icon-btn"
                             onClick={() => setArchiveConfirm(selectedProject)}
                             title={t.archiveProjectBtn}
-                            style={{ color: '#ff8c00', cursor: 'pointer' }}
+                            style={{color: '#ff8c00', cursor: 'pointer'}}
                         />
                     )}
                 </div>
@@ -551,7 +568,7 @@ export default function App() {
                     <select
                         className="dropdown"
                         value={form.Testare}
-                        onChange={e => setForm({ ...form, Testare: e.target.value })}
+                        onChange={e => setForm({...form, Testare: e.target.value})}
                     >
                         <option value="">{t.selectTester}</option>
                         {testers.map(t => <option key={t} value={t}>{t}</option>)}
@@ -562,19 +579,19 @@ export default function App() {
                     onClick={() => setActiveTab(activeTab === "konfig" ? "" : "konfig")}
                     className={`btn red ${activeTab === "konfig" ? "active" : ""}`}
                 >
-                    <Calculator size={16} /> {t.calculatePacing}
+                    <Calculator size={16}/> {t.calculatePacing}
                 </button>
 
                 <button
                     onClick={() => setActiveTab(activeTab === "generellKonfig" ? "" : "generellKonfig")}
                     className={`btn red ${activeTab === "generellKonfig" ? "active" : ""}`}
                 >
-                    <PlusCircle size={16} /> {t.generalConfig}
+                    <PlusCircle size={16}/> {t.generalConfig}
                 </button>
 
                 {selectedProject && (
                     <button onClick={refreshData} className="btn gray" disabled={loading}>
-                        <RefreshCw size={16} className={loading ? "spinning" : ""} /> {t.refresh}
+                        <RefreshCw size={16} className={loading ? "spinning" : ""}/> {t.refresh}
                     </button>
                 )}
 
@@ -582,13 +599,13 @@ export default function App() {
                     onClick={() => setShowArchived(!showArchived)}
                     className={`btn purple ${showArchived ? "active" : ""}`}
                 >
-                    <Archive size={16} /> {t.showArchived} ({archivedProjects.length})
+                    <Archive size={16}/> {t.showArchived} ({archivedProjects.length})
                 </button>
             </div>
 
             {error && (
                 <div className="error-banner">
-                    <XCircle size={16} />
+                    <XCircle size={16}/>
                     <span>{error}</span>
                     <button onClick={() => setError("")} className="close-btn">×</button>
                 </div>
