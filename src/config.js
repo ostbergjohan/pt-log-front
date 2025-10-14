@@ -1,5 +1,5 @@
 const config = {
-    API_BASE: "https://ptlog-af-neoload-acc.apps.tocp4.arbetsformedlingen.se",
+    API_BASE: "https://change-me.se",
     testTypes: [
         { key: 'reference', sv: 'Referenstest', en: 'Reference Test' },
         { key: 'verification', sv: 'Verifikationstest', en: 'Verification Test' },
