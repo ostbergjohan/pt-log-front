@@ -12,7 +12,8 @@ https://github.com/ostbergjohan/pt-log-backend is required.
 
 ## ✨ Features
 
-- 🌍 **Bilingual Interface (English/Swedish)**
+- 🌍 **Multilingual Interface (7 Languages)**
+  - Supports English, Swedish, French, German, Danish, Norwegian, and Finnish
   - Toggle between English and Swedish with a single click
   - Language preference persists across sessions
   - English as default language
