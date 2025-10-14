@@ -2,166 +2,8 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Languages, Archive } from "lucide-react";
 import testersData from "./testers.json";
 import config from "./config";
+import translations from "./translations";
 import "./App.css";
-
-const translations = {
-    sv: {
-        newTest: "Nytt Test",
-        createProject: "Skapa Projekt",
-        project: "Projekt",
-        selectProject: "Välj Projekt",
-        tester: "Testare",
-        selectTester: "Välj Testare",
-        calculatePacing: "Beräkna Pacing",
-        generalConfig: "Generell Konfig",
-        refresh: "Uppdatera",
-        type: "Typ",
-        testName: "Testnamn",
-        purpose: "Syfte",
-        cancel: "Avbryt",
-        saveTest: "Spara Test",
-        projectName: "Projektnamn",
-        enterProjectName: "Ange projektnamn",
-        analysisFor: "Analys för",
-        saveAnalysis: "Spara Analys",
-        describeAnalysis: "Beskriv analysen...",
-        numberOfVu: "Antal Vu",
-        calculated: "beräknad",
-        script: "Skript",
-        scriptName: "Skriptnamn (valfritt)",
-        addConfig: "Lägg till KONFIG",
-        configDescription: "Konfigurationsbeskrivning",
-        describeConfig: "Beskriv konfigurationen (t.ex. Applikationsserver: Tomcat 9.0.45, JVM: OpenJDK 11, Memory: 4GB)",
-        addConfigBtn: "Lägg till Konfig",
-        deleteProject: "Radera Projekt",
-        deleteProjectConfirm: "Är du säker på att du vill radera",
-        deleteProjectWarning: "Detta kommer att radera alla tester i projektet. Denna åtgärd kan inte ångras.",
-        deleteTest: "Radera Test",
-        deleteTestConfirm: "Är du säker på att du vill radera testet",
-        deleteTestWarning: "Denna åtgärd kan inte ångras.",
-        selectProjectToStart: "Välj ett projekt för att komma igång",
-        createOrSelect: "Skapa ett nytt projekt eller välj ett befintligt från listan ovan",
-        loadingData: "Laddar data...",
-        noTestsYet: "Inga tester ännu. Skapa ditt första test!",
-        copied: "Kopierat!",
-        enterTestName: "Ange testnamn",
-        describeTestPurpose: "Beskriv testets syfte",
-        virtualUsers: "Antal virtuella användare",
-        calculatedAutomatically: "Beräknas automatiskt",
-        copyProjectLink: "Kopiera länk till projekt",
-        deleteProjectBtn: "Radera projekt",
-        deleteTestBtn: "Radera test",
-        fillReqAndVu: "Vänligen fyll i Req/h eller Req/s samt Antal Vu",
-        fillDescription: "Vänligen fyll i beskrivning",
-        date: "DATUM",
-        colType: "TYP",
-        colTestName: "TESTNAMN",
-        colPurpose: "SYFTE",
-        colAnalysis: "ANALYS",
-        colTester: "TESTARE",
-        action: "ÅTGÄRD",
-        pacingTestName: "PACING",
-        configTestName: "KONFIG",
-        archiveProject: "Arkivera Projekt",
-        archiveProjectBtn: "Arkivera projekt",
-        archiveProjectConfirm: "Är du säker på att du vill arkivera",
-        archiveProjectWarning: "Projektet kommer att döljas från listan men kan återställas senare.",
-        showArchived: "Arkiverade",
-        archived: "Arkiverad",
-        restoreProject: "Återställ Projekt",
-        restoreProjectBtn: "Återställ projekt",
-        restoreProjectConfirm: "Är du säker på att du vill återställa",
-        restoreProjectWarning: "Projektet kommer att visas i den aktiva listan igen.",
-        selectArchivedProject: "Välj ett arkiverat projekt för att komma igång",
-        noArchivedProjects: "Inga arkiverade projekt",
-        testTypes: {
-            reference: "Referenstest",
-            verification: "Verifikationstest",
-            load: "Belastningstest",
-            endurance: "Utmattningstest",
-            max: "Maxtest",
-            create: "Skapa"
-        }
-    },
-    en: {
-        newTest: "New Test",
-        createProject: "Create Project",
-        project: "Project",
-        selectProject: "Select Project",
-        tester: "Tester",
-        selectTester: "Select Tester",
-        calculatePacing: "Calculate Pacing",
-        generalConfig: "General Config",
-        refresh: "Refresh",
-        type: "Type",
-        testName: "Test Name",
-        purpose: "Purpose",
-        cancel: "Cancel",
-        saveTest: "Save Test",
-        projectName: "Project Name",
-        enterProjectName: "Enter project name",
-        analysisFor: "Analysis for",
-        saveAnalysis: "Save Analysis",
-        describeAnalysis: "Describe the analysis...",
-        numberOfVu: "Number of VUs",
-        calculated: "calculated",
-        script: "Script",
-        scriptName: "Script name (optional)",
-        addConfig: "Add CONFIG",
-        configDescription: "Configuration Description",
-        describeConfig: "Describe the configuration (e.g., Application server: Tomcat 9.0.45, JVM: OpenJDK 11, Memory: 4GB)",
-        addConfigBtn: "Add Config",
-        deleteProject: "Delete Project",
-        deleteProjectConfirm: "Are you sure you want to delete",
-        deleteProjectWarning: "This will delete all tests in the project. This action cannot be undone.",
-        deleteTest: "Delete Test",
-        deleteTestConfirm: "Are you sure you want to delete the test",
-        deleteTestWarning: "This action cannot be undone.",
-        selectProjectToStart: "Select a project to get started",
-        createOrSelect: "Create a new project or select an existing one from the list above",
-        loadingData: "Loading data...",
-        noTestsYet: "No tests yet. Create your first test!",
-        copied: "Copied!",
-        enterTestName: "Enter test name",
-        describeTestPurpose: "Describe the test purpose",
-        virtualUsers: "Number of virtual users",
-        calculatedAutomatically: "Calculated automatically",
-        copyProjectLink: "Copy project link",
-        deleteProjectBtn: "Delete project",
-        deleteTestBtn: "Delete test",
-        fillReqAndVu: "Please fill in Req/h or Req/s and Number of VUs",
-        fillDescription: "Please fill in description",
-        date: "DATE",
-        colType: "TYPE",
-        colTestName: "TEST NAME",
-        colPurpose: "PURPOSE",
-        colAnalysis: "ANALYSIS",
-        colTester: "TESTER",
-        action: "ACTION",
-        pacingTestName: "PACING",
-        configTestName: "CONFIG",
-        archiveProject: "Archive Project",
-        archiveProjectBtn: "Archive project",
-        archiveProjectConfirm: "Are you sure you want to archive",
-        archiveProjectWarning: "The project will be hidden from the list but can be restored later.",
-        showArchived: "Archived",
-        archived: "Archived",
-        restoreProject: "Restore Project",
-        restoreProjectBtn: "Restore project",
-        restoreProjectConfirm: "Are you sure you want to restore",
-        restoreProjectWarning: "The project will be shown in the active list again.",
-        selectArchivedProject: "Select an archived project to get started",
-        noArchivedProjects: "No archived projects",
-        testTypes: {
-            reference: "Reference Test",
-            verification: "Verification Test",
-            load: "Load Test",
-            endurance: "Endurance Test",
-            max: "Max Test",
-            create: "Create"
-        }
-    }
-};
 
 export default function App() {
     const [language, setLanguage] = useState(() => localStorage.getItem('language') || 'en');
@@ -235,7 +77,7 @@ export default function App() {
                 console.error("Failed to load projects", err);
                 setError("Failed to load projects");
             });
-        
+
         // Also fetch archived projects to update counter
         fetch(`${API_BASE}/populateArkiverade`)
             .then(res => res.json())
@@ -381,7 +223,7 @@ export default function App() {
             const json = await projectsRes.json();
             const projectsList = Array.isArray(json) ? json : [];
             setProjects(projectsList);
-            
+
             setNewProjectName("");
             setActiveTab("");
             setSelectedProject(trimmedName);
@@ -609,7 +451,7 @@ export default function App() {
             }
 
             setArchiveConfirm(null);
-            
+
             if (showArchived) {
                 fetchArchivedProjects();
             }
@@ -760,6 +602,7 @@ export default function App() {
                     isFormValid={isFormValid}
                     onCancel={() => setActiveTab("")}
                     t={t}
+                    language={language}
                 />
             )}
 
@@ -916,7 +759,7 @@ export default function App() {
                                 </button>
                             )}
                         </div>
-                        
+
                         {!selectedArchivedProject ? (
                             <div className="empty-state">
                                 <Archive size={48} />
@@ -1101,15 +944,11 @@ export default function App() {
     );
 }
 
-function NewTestForm({ form, setForm, handleSubmit, isFormValid, onCancel, t }) {
-    const testTypeOptions = [
-        { key: 'reference', label: t.testTypes.reference },
-        { key: 'verification', label: t.testTypes.verification },
-        { key: 'load', label: t.testTypes.load },
-        { key: 'endurance', label: t.testTypes.endurance },
-        { key: 'max', label: t.testTypes.max },
-        { key: 'create', label: t.testTypes.create }
-    ];
+function NewTestForm({ form, setForm, handleSubmit, isFormValid, onCancel, t, language }) {
+    const testTypeOptions = config.testTypes.map(type => ({
+        key: type.key,
+        label: type[language] || type.en
+    }));
 
     return (
         <div className="form-grid">

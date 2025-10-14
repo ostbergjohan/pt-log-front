@@ -1,3 +1,4 @@
+```markdown
 # PT-Log 2.0
 <p align="left">
   <img src="https://github.com/ostbergjohan/pt-log-backend/raw/main/image/screenshot.png" alt="Screenshot">
@@ -15,7 +16,7 @@ https://github.com/ostbergjohan/pt-log-backend is required.
   - Toggle between English and Swedish with a single click
   - Language preference persists across sessions
   - English as default language
-  - All UI elements fully translated (buttons, labels, forms, modals, table headers)
+  - Easy to customize translations via `translations.js`
   
 - 📂 **Project Management**
   - Create and select projects
@@ -29,13 +30,13 @@ https://github.com/ostbergjohan/pt-log-backend is required.
 - 🧪 **Test Management**
   - Add new tests with metadata (type, name, purpose, tester)
   - Support for multiple test types: Reference, Verification, Load, Endurance, Max, Create
+  - Customizable test types via `config.js`
   - Copy test names with a single click
   - Delete individual tests
   - View tests from both active and archived projects
 
 - 📝 **Analysis**
   - Add or update analysis text for each test entry
-  - Clickable URLs in analysis text
   - Edit analysis for tests in both active and archived projects
 
 - 🧮 **Pacing Calculator**
@@ -46,20 +47,7 @@ https://github.com/ostbergjohan/pt-log-backend is required.
   - Copy calculated pacing values
 
 - ⚙️ **Configuration Management**
-  - Add pacing configurations with VU calculations
   - Add general configuration entries
-  - Language-aware CONFIG/KONFIG naming
-
----
-
-## 📦 Tech Stack
-
-- [React](https://react.dev/) (Hooks, functional components)
-- [lucide-react](https://lucide.dev/) for icons
-- CSS for styling (`App.css`)
-- External JSON configuration:
-  - `config.js` for API base URL
-  - `testers.json` for tester names
 
 ---
 
@@ -76,16 +64,42 @@ cd testlog-frontend
 npm install
 ```
 
-### 3. Configure API base
-Update the `config.js` file with your backend API base URL:
+### 3. Configure API base and test types
+Update the `config.js` file with your backend API base URL and customize test types if needed:
 ```js
 const config = {
-  API_BASE: "https://your-backend-url"
+    API_BASE: "https://your-backend-url",
+    testTypes: [
+        { key: 'reference', sv: 'Referenstest', en: 'Reference Test' },
+        { key: 'verification', sv: 'Verifikationstest', en: 'Verification Test' },
+        { key: 'load', sv: 'Belastningstest', en: 'Load Test' },
+        { key: 'endurance', sv: 'Utmattningstest', en: 'Endurance Test' },
+        { key: 'max', sv: 'Maxtest', en: 'Max Test' },
+        { key: 'create', sv: 'Skapa', en: 'Create' }
+    ]
 };
 export default config;
 ```
 
-### 4. Run the app
+### 4. Customize translations (optional)
+Update the `translations.js` file to modify any UI text or add new languages:
+```js
+const translations = {
+    sv: {
+        newTest: "Nytt Test",
+        createProject: "Skapa Projekt",
+        // ... more translations
+    },
+    en: {
+        newTest: "New Test",
+        createProject: "Create Project",
+        // ... more translations
+    }
+};
+export default translations;
+```
+
+### 5. Run the app
 ```bash
 npm start
 ```
@@ -98,29 +112,68 @@ This will start the app on [http://localhost:3000](http://localhost:3000).
 src/
  ├── App.js          # Main React component with bilingual support
  ├── App.css         # Styling
- ├── config.js       # API base URL config
+ ├── config.js       # API base URL and test types configuration
+ ├── translations.js # All UI translations (English/Swedish)
  ├── testers.json    # List of testers
  └── components/     # (Optional future split of forms/components)
 ```
 
 ---
 
-## 🌍 Language Support
 
-The application supports both English and Swedish:
+## 🎨 Customization
 
-- **Default Language**: English
-- **Toggle**: Click the language button (🌍 EN/SV) in the header
-- **Persistence**: Language preference is saved to localStorage
-- **Translated Elements**:
-  - All buttons and labels
-  - Form fields and placeholders
-  - Table column headers
-  - Modal dialogs
-  - Error messages
-  - Test types (Reference Test/Referenstest, etc.)
-  - Configuration entries (CONFIG/KONFIG)
-  - Archive/restore actions (Archive/Arkivera, Restore/Återställ)
+### Adding/Modifying Test Types
+
+Edit `config.js` to add or modify test types:
+
+```js
+testTypes: [
+    { key: 'your-test-key', sv: 'Swedish Name', en: 'English Name' },
+    // Add more test types as needed
+]
+```
+
+The `key` is used internally and saved to the database, while `sv` and `en` are the display names.
+
+### Customizing Translations
+
+Edit `translations.js` to modify any UI text:
+
+```js
+const translations = {
+    sv: {
+        yourNewKey: "Din svenska text",
+        // Modify existing or add new keys
+    },
+    en: {
+        yourNewKey: "Your english text",
+        // Modify existing or add new keys
+    }
+};
+```
+
+### Adding a New Language
+
+1. Add a new language object to `translations.js`:
+```js
+const translations = {
+    sv: { /* Swedish translations */ },
+    en: { /* English translations */ },
+    de: { /* German translations */ },
+    // Add more languages
+};
+```
+
+2. Update test types in `config.js`:
+```js
+testTypes: [
+    { key: 'reference', sv: 'Referenstest', en: 'Reference Test', de: 'Referenztest' },
+    // Add language codes to all test types
+]
+```
+
+3. Update the language toggle button logic in `App.js` to cycle through your languages.
 
 ---
 
@@ -147,39 +200,6 @@ The frontend expects the following backend endpoints:
 
 ---
 
-## 🖼️ UI Overview
-
-- **Header bar**: 
-  - Language toggle button (🌍 EN/SV)
-  - "New Test" / "Nytt Test" button
-  - "Create Project" / "Skapa Projekt" button
-  - Project & tester dropdowns
-  - Archive icon (🗄️) next to selected project
-  - "Calculate Pacing" / "Beräkna Pacing" button
-  - "General Config" / "Generell Konfig" button
-  - Refresh button
-  - "Archived" / "Arkiverade" toggle button with counter
-
-- **Tabs**: 
-  - New test form with translated test types
-  - Create project form
-  - Analysis editor
-  - Pacing calculator
-  - General configuration form
-
-- **Main View (Active Projects)**:
-  - Table displaying test data with translated columns
-  - English: `DATE, TYPE, TEST NAME, PURPOSE, ANALYSIS, TESTER, ACTION`
-  - Swedish: `DATUM, TYP, TESTNAMN, SYFTE, ANALYS, TESTARE, ÅTGÄRD`
-  - Archive icon for quick project archiving
-
-- **Archived View**:
-  - Separate project dropdown for archived projects
-  - Full test data table (same as active view)
-  - Restore button to move projects back to active status
-  - Delete button for permanent project removal
-
----
 
 ## 💾 Local Storage
 
@@ -190,7 +210,7 @@ The app persists the following preferences in localStorage:
 
 ---
 
-## 🔄 Archive/Restore Workflow
+## 📄 Archive/Restore Workflow
 
 1. **Archive a Project**: Click the archive icon (🗄️) next to a selected project
 2. **View Archived**: Click "Archived" / "Arkiverade" button to toggle archived view
@@ -216,17 +236,6 @@ Example:
 
 ---
 
-## 💥 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
----
-
-## 📄 License
-
-This project is open source and available under the MIT License.
-
----
 
 ## 🔗 Related Projects
 
@@ -237,3 +246,4 @@ This project is open source and available under the MIT License.
 ## 📧 Contact
 
 For questions or feedback, please open an issue on GitHub.
+```
