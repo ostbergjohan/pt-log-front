@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Archive } from "lucide-react";
+import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Archive, Server, CheckCircle, XCircleIcon, Database, Github } from "lucide-react";
 import testersData from "./testers.json";
 import config from "./config";
 import translations from "./translations";
@@ -37,6 +37,7 @@ export default function App() {
     const [archivedData, setArchivedData] = useState([]);
     const [loadingArchived, setLoadingArchived] = useState(false);
     const [dbInfo, setDbInfo] = useState(null);
+    const [backendStatus, setBackendStatus] = useState("checking");
 
     const t = translations[language];
     const API_BASE = config.API_BASE;
@@ -54,6 +55,28 @@ export default function App() {
     useEffect(() => {
         localStorage.setItem('language', language);
     }, [language]);
+
+    useEffect(() => {
+        const checkBackend = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/healthcheck`, {
+                    method: "GET",
+                    signal: AbortSignal.timeout(3000)
+                });
+                if (response.ok) {
+                    setBackendStatus("online");
+                } else {
+                    setBackendStatus("offline");
+                }
+            } catch (error) {
+                setBackendStatus("offline");
+            }
+        };
+
+        checkBackend();
+        const interval = setInterval(checkBackend, 30000);
+        return () => clearInterval(interval);
+    }, [API_BASE]);
 
     useEffect(() => {
         fetch(`${API_BASE}/dbinfo`)
@@ -88,7 +111,6 @@ export default function App() {
                 setError("Failed to load projects");
             });
 
-        // Also fetch archived projects to update counter
         fetch(`${API_BASE}/populateArkiverade`)
             .then(res => res.json())
             .then(json => Array.isArray(json) ? setArchivedProjects(json) : setArchivedProjects([]))
@@ -225,10 +247,8 @@ export default function App() {
 
             if (!res.ok) throw new Error("Create project failed");
 
-            // Small delay to ensure database is updated
             await new Promise(resolve => setTimeout(resolve, 200));
 
-            // Refresh the projects list
             const projectsRes = await fetch(`${API_BASE}/populate`);
             const json = await projectsRes.json();
             const projectsList = Array.isArray(json) ? json : [];
@@ -300,7 +320,6 @@ export default function App() {
 
         const finalReqS = calculatedReqS || reqS;
         if (finalReqS > 0 && vu > 0) {
-            // Pacing = time between requests = VU / Req/s
             pacing = (vu / finalReqS).toFixed(2);
         }
 
@@ -395,7 +414,6 @@ export default function App() {
 
             if (!res.ok) throw new Error("Delete project failed");
 
-            // Refresh both regular and archived project lists
             const projectsRes = await fetch(`${API_BASE}/populate`);
             const json = await projectsRes.json();
             setProjects(Array.isArray(json) ? json : []);
@@ -956,7 +974,7 @@ export default function App() {
                 )}
             </div>
 
-            <DbInfoFooter dbInfo={dbInfo} apiBase={API_BASE} />
+            <DbInfoFooter dbInfo={dbInfo} apiBase={API_BASE} backendStatus={backendStatus} />
         </div>
     );
 }
@@ -1171,43 +1189,92 @@ function GenerellKonfigForm({ generellKonfig, setGenerellKonfig, handleAddGenere
         </div>
     );
 }
-function DbInfoFooter({ dbInfo, apiBase }) {
+
+function DbInfoFooter({ dbInfo, apiBase, backendStatus }) {
     if (!dbInfo) return null;
 
     return (
-        <div className="db-info-footer">
-            <span className="db-info-item">
-                <span className="db-label">Backend:</span>
-                <span className="db-value">{apiBase}</span>
-            </span>
-            <span className="db-info-item">
-                <span className="db-label">Database:</span>
-                <span className="db-value">{dbInfo.type}</span>
-            </span>
-            {dbInfo.schema && (
-                <span className="db-info-item">
-                    <span className="db-label">Schema:</span>
-                    <span className="db-value">{dbInfo.schema}</span>
-                </span>
-            )}
-            {dbInfo.url && (
-                <span className="db-info-item">
-                    <span className="db-label">DB URL:</span>
-                    <span className="db-value" title={dbInfo.url}>
-                        {dbInfo.url.length > 50 ? dbInfo.url.substring(0, 50) + '...' : dbInfo.url}
-                    </span>
-                </span>
-            )}
-            <span className="db-info-item">
+        <footer style={{
+            marginTop: '48px',
+            paddingTop: '24px',
+            borderTop: '2px solid #e5e7eb',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            flexWrap: 'wrap',
+            fontSize: '0.875rem',
+            color: '#6b7280'
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Server size={16} />
+                <span style={{ fontWeight: '500' }}>Backend:</span>
                 <a
-                    href="https://github.com/ostbergjohan/pt-log-front"
+                    href={apiBase}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="db-value"
+                    style={{
+                        color: '#3b82f6',
+                        textDecoration: 'none',
+                        fontFamily: 'monospace'
+                    }}
                 >
-                    GitHub
+                    {apiBase}
                 </a>
+                {backendStatus === "online" && (
+                    <CheckCircle size={16} style={{ color: '#10b981' }} title="Backend Online" />
+                )}
+                {backendStatus === "offline" && (
+                    <XCircleIcon size={16} style={{ color: '#ef4444' }} title="Backend Offline" />
+                )}
+                {backendStatus === "checking" && (
+                    <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>checking...</span>
+                )}
+            </div>
+
+            <span style={{ color: '#d1d5db' }}>•</span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Database size={16} />
+                <span style={{ fontWeight: '500' }}>Database:</span>
+                <span>{dbInfo.type}</span>
+            </div>
+
+            {dbInfo.schema && (
+                <>
+                    <span style={{ color: '#d1d5db' }}>•</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: '500' }}>Schema:</span>
+                        <span>{dbInfo.schema}</span>
+                    </div>
+                </>
+            )}
+
+            <span style={{ color: '#d1d5db' }}>•</span>
+
+            <a
+                href="https://github.com/ostbergjohan/pt-log-backend"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: '#6b7280',
+                    textDecoration: 'none',
+                    transition: 'color 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.color = '#000'}
+                onMouseOut={(e) => e.currentTarget.style.color = '#6b7280'}
+            >
+                <Github size={16} />
+                <span>ostbergjohan/pt-log-backend</span>
+            </a>
+
+            <span style={{ color: '#d1d5db' }}>•</span>
+
+            <span style={{ fontSize: '0.875rem', color: '#9ca3af' }}>
+                Made with ❤️ for performance testers
             </span>
-        </div>
+        </footer>
     );
 }
