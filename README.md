@@ -13,7 +13,6 @@ https://github.com/ostbergjohan/pt-log-backend is required.
 
 - 🌍 **Multilingual Interface (7 Languages)**
   - Supports English, Swedish, French, German, Danish, Norwegian, and Finnish
-  - Toggle between English and Swedish with a single click
   - Language preference persists across sessions
   - English as default language
   - Easy to customize translations via `translations.js`
@@ -21,19 +20,17 @@ https://github.com/ostbergjohan/pt-log-backend is required.
 - 📂 **Project Management**
   - Create and select projects
   - Archive projects for later reference
-  - Restore archived projects back to active status
-  - View and manage archived projects separately
   - Share project links via URL
   - Delete projects with confirmation (only in archived view)
-  - Real-time project counter for archived projects
 
 - 🧪 **Test Management**
   - Add new tests with metadata (type, name, purpose, tester)
   - Support for multiple test types: Reference, Verification, Load, Endurance, Max, Create
   - Customizable test types via `config.js`
-  - Copy test names with a single click
-  - Delete individual tests
   - View tests from both active and archived projects
+
+- 🧑‍💻 **User Management**
+    - Add Users to testers.json
 
 - 📝 **Analysis**
   - Add or update analysis text for each test entry
@@ -64,7 +61,7 @@ cd testlog-frontend
 npm install
 ```
 
-### 3. Configure API base and test types
+### 3. Configure API base, test types and users.
 Update the `config.js` file with your backend API base URL and customize test types if needed:
 ```js
 const config = {
@@ -79,6 +76,13 @@ const config = {
     ]
 };
 export default config;
+
+testers.json:
+[
+  "John",
+  "Peter"
+]
+
 ```
 
 ### 4. Customize translations (optional)
