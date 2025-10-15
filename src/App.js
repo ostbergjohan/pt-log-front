@@ -1171,7 +1171,6 @@ function GenerellKonfigForm({ generellKonfig, setGenerellKonfig, handleAddGenere
         </div>
     );
 }
-
 function DbInfoFooter({ dbInfo, apiBase }) {
     if (!dbInfo) return null;
 
@@ -1199,6 +1198,16 @@ function DbInfoFooter({ dbInfo, apiBase }) {
                     </span>
                 </span>
             )}
+            <span className="db-info-item">
+                <a
+                    href="https://github.com/ostbergjohan/pt-log-front"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="db-value"
+                >
+                    GitHub
+                </a>
+            </span>
         </div>
     );
 }
