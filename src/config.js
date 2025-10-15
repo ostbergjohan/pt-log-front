@@ -1,5 +1,5 @@
 const config = {
-    API_BASE: "https://changeme.se",
+    API_BASE: "https://change.me",
     testTypes: [
         {
             key: 'reference',

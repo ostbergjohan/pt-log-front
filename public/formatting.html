@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Description Formatting Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .panel h3 {
+            margin-top: 0;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 8px;
+        }
+        .input-box {
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .output-box {
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+            color: #6b7280;
+        }
+        .output-box ul, .output-box ol {
+            margin: 4px 0;
+            padding-left: 24px;
+        }
+        .output-box li {
+            margin-bottom: 2px;
+        }
+        .output-box a {
+            color: #3b82f6;
+            text-decoration: underline;
+        }
+        .output-box strong {
+            color: #1f2937;
+            font-weight: 600;
+        }
+        .output-box em {
+            font-style: italic;
+        }
+        h1 {
+            text-align: center;
+            color: #1f2937;
+        }
+        .hint {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .format-note {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+<h1>🎨 Project Description Formatting Demo</h1>
+
+<div class="hint">
+    <strong>💡 How to use:</strong> Copy the text from the "Input" box and paste it into your project description.
+    The "Output" shows how it will look when saved!
+</div>
+
+<div class="container">
+    <div class="panel">
+        <h3>📝 Input (What You Type)</h3>
+        <div class="input-box">**E-commerce API Load Test**
+
+            **Project Goals:**
+            * Establish baseline at **1000 req/s**
+            * Test new payment gateway
+            * Identify performance bottlenecks
+            * Document optimization opportunities
+
+            **Test Phases:**
+            1. Baseline measurement
+            2. Load testing (30 min)
+            3. Stress testing (spike to 2000 req/s)
+            4. Endurance testing (2 hours at 1000 req/s)
+
+            **Key Resources:**
+            * Dashboard: https://grafana.company.com/perf
+            * JIRA Epic: https://jira.company.com/PERF-123
+            * Test Scripts: https://github.com/company/load-tests
+
+            **Team:** _Performance Engineering_
+            **Duration:** *January - March 2025*
+            **Status:** In Progress ✅
+
+            **Important Notes:**
+            * Run tests during *off-peak hours*
+            * Monitor database CPU and memory
+            * Use **production-like** data volumes</div>
+        <div class="format-note">
+            💡 Formatting: **bold**, *italic*, * bullets, 1. numbers, URLs auto-link
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>✨ Output (What You See)</h3>
+        <div class="output-box">
+            <div style="margin-bottom: 4px;"><strong>E-commerce API Load Test</strong></div>
+            <div style="height: 8px;"></div>
+            <div style="margin-bottom: 4px;"><strong>Project Goals:</strong></div>
+            <ul style="margin: 4px 0; padding-left: 24px;">
+                <li style="margin-bottom: 2px;">Establish baseline at <strong>1000 req/s</strong></li>
+                <li style="margin-bottom: 2px;">Test new payment gateway</li>
+                <li style="margin-bottom: 2px;">Identify performance bottlenecks</li>
+                <li style="margin-bottom: 2px;">Document optimization opportunities</li>
+            </ul>
+            <div style="height: 8px;"></div>
+            <div style="margin-bottom: 4px;"><strong>Test Phases:</strong></div>
+            <ol style="margin: 4px 0; padding-left: 24px;">
+                <li style="margin-bottom: 2px;">Baseline measurement</li>
+                <li style="margin-bottom: 2px;">Load testing (30 min)</li>
+                <li style="margin-bottom: 2px;">Stress testing (spike to 2000 req/s)</li>
+                <li style="margin-bottom: 2px;">Endurance testing (2 hours at 1000 req/s)</li>
+            </ol>
+            <div style="height: 8px;"></div>
+            <div style="margin-bottom: 4px;"><strong>Key Resources:</strong></div>
+            <ul style="margin: 4px 0; padding-left: 24px;">
+                <li style="margin-bottom: 2px;">Dashboard: <a href="https://grafana.company.com/perf" target="_blank">https://grafana.company.com/perf</a></li>
+                <li style="margin-bottom: 2px;">JIRA Epic: <a href="https://jira.company.com/PERF-123" target="_blank">https://jira.company.com/PERF-123</a></li>
+                <li style="margin-bottom: 2px;">Test Scripts: <a href="https://github.com/company/load-tests" target="_blank">https://github.com/company/load-tests</a></li>
+            </ul>
+            <div style="height: 8px;"></div>
+            <div style="margin-bottom: 4px;"><strong>Team:</strong> <em>Performance Engineering</em></div>
+            <div style="margin-bottom: 4px;"><strong>Duration:</strong> <em>January - March 2025</em></div>
+            <div style="margin-bottom: 4px;"><strong>Status:</strong> In Progress ✅</div>
+            <div style="height: 8px;"></div>
+            <div style="margin-bottom: 4px;"><strong>Important Notes:</strong></div>
+            <ul style="margin: 4px 0; padding-left: 24px;">
+                <li style="margin-bottom: 2px;">Run tests during <em>off-peak hours</em></li>
+                <li style="margin-bottom: 2px;">Monitor database CPU and memory</li>
+                <li style="margin-bottom: 2px;">Use <strong>production-like</strong> data volumes</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 40px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <h3 style="margin-top: 0;">📋 Quick Reference</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+            <th style="text-align: left; padding: 8px; color: #374151;">Format</th>
+            <th style="text-align: left; padding: 8px; color: #374151;">Syntax</th>
+            <th style="text-align: left; padding: 8px; color: #374151;">Result</th>
+        </tr>
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 8px;">Bold</td>
+            <td style="padding: 8px; font-family: monospace;">**text**</td>
+            <td style="padding: 8px;"><strong>text</strong></td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 8px;">Italic</td>
+            <td style="padding: 8px; font-family: monospace;">*text*</td>
+            <td style="padding: 8px;"><em>text</em></td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 8px;">Bullet</td>
+            <td style="padding: 8px; font-family: monospace;">* item</td>
+            <td style="padding: 8px;">• item</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 8px;">Numbered</td>
+            <td style="padding: 8px; font-family: monospace;">1. item</td>
+            <td style="padding: 8px;">1. item</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 8px;">Link</td>
+            <td style="padding: 8px; font-family: monospace;">https://example.com</td>
+            <td style="padding: 8px;"><a href="https://example.com" style="color: #3b82f6;">https://example.com</a></td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;">Spacing</td>
+            <td style="padding: 8px; font-family: monospace;">(blank line)</td>
+            <td style="padding: 8px;">Adds space between sections</td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Archive, Server, CheckCircle, XCircleIcon, Database, Github } from "lucide-react";
+import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Archive, Server, CheckCircle, XCircleIcon, Database, Github, Info } from "lucide-react";
 import testersData from "./testers.json";
 import config from "./config";
 import translations from "./translations";
@@ -21,6 +21,8 @@ export default function App() {
         return { Typ: "reference", Testnamn: "", Syfte: "", Testare: savedTester || "Johan" };
     });
     const [newProjectName, setNewProjectName] = useState("");
+    const [newProjectDescription, setNewProjectDescription] = useState("");
+    const [projectInfo, setProjectInfo] = useState(null);
     const [analysRow, setAnalysRow] = useState(null);
     const [analysText, setAnalysText] = useState("");
     const [copied, setCopied] = useState(false);
@@ -36,6 +38,7 @@ export default function App() {
     const [selectedArchivedProject, setSelectedArchivedProject] = useState("");
     const [archivedData, setArchivedData] = useState([]);
     const [loadingArchived, setLoadingArchived] = useState(false);
+    const [archivedProjectInfo, setArchivedProjectInfo] = useState(null);
     const [dbInfo, setDbInfo] = useState(null);
     const [backendStatus, setBackendStatus] = useState("checking");
 
@@ -116,6 +119,28 @@ export default function App() {
             .then(json => Array.isArray(json) ? setArchivedProjects(json) : setArchivedProjects([]))
             .catch(err => console.error("Failed to load archived projects count", err));
     }, [API_BASE]);
+
+    useEffect(() => {
+        if (selectedProject) {
+            fetch(`${API_BASE}/getProjectInfo?projekt=${encodeURIComponent(selectedProject)}`)
+                .then(res => res.json())
+                .then(info => setProjectInfo(info))
+                .catch(err => console.error("Failed to load project info", err));
+        } else {
+            setProjectInfo(null);
+        }
+    }, [selectedProject, API_BASE]);
+
+    useEffect(() => {
+        if (selectedArchivedProject) {
+            fetch(`${API_BASE}/getProjectInfo?projekt=${encodeURIComponent(selectedArchivedProject)}`)
+                .then(res => res.json())
+                .then(info => setArchivedProjectInfo(info))
+                .catch(err => console.error("Failed to load archived project info", err));
+        } else {
+            setArchivedProjectInfo(null);
+        }
+    }, [selectedArchivedProject, API_BASE]);
 
     const fetchArchivedProjects = useCallback(() => {
         fetch(`${API_BASE}/populateArkiverade`)
@@ -242,7 +267,10 @@ export default function App() {
             const res = await fetch(`${API_BASE}/createProject`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ Projekt: trimmedName })
+                body: JSON.stringify({
+                    Projekt: trimmedName,
+                    Beskrivning: newProjectDescription.trim()
+                })
             });
 
             if (!res.ok) throw new Error("Create project failed");
@@ -255,13 +283,64 @@ export default function App() {
             setProjects(projectsList);
 
             setNewProjectName("");
+            setNewProjectDescription("");
             setActiveTab("");
             setSelectedProject(trimmedName);
         } catch (err) {
             console.error("Add project error:", err);
             setError("Failed to create project");
         }
-    }, [newProjectName, projects, API_BASE]);
+    }, [newProjectName, newProjectDescription, projects, API_BASE]);
+
+    const handleUpdateProjectDescription = useCallback(async (newDescription) => {
+        if (!selectedProject) return;
+
+        setError("");
+        try {
+            const res = await fetch(`${API_BASE}/updateProjectBeskrivning`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    Projekt: selectedProject,
+                    Beskrivning: newDescription.trim()
+                })
+            });
+
+            if (!res.ok) throw new Error("Update failed");
+
+            const infoRes = await fetch(`${API_BASE}/getProjectInfo?projekt=${encodeURIComponent(selectedProject)}`);
+            const info = await infoRes.json();
+            setProjectInfo(info);
+        } catch (err) {
+            console.error("Update description error:", err);
+            setError("Failed to update project description");
+        }
+    }, [selectedProject, API_BASE]);
+
+    const handleUpdateArchivedProjectDescription = useCallback(async (newDescription) => {
+        if (!selectedArchivedProject) return;
+
+        setError("");
+        try {
+            const res = await fetch(`${API_BASE}/updateProjectBeskrivning`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    Projekt: selectedArchivedProject,
+                    Beskrivning: newDescription.trim()
+                })
+            });
+
+            if (!res.ok) throw new Error("Update failed");
+
+            const infoRes = await fetch(`${API_BASE}/getProjectInfo?projekt=${encodeURIComponent(selectedArchivedProject)}`);
+            const info = await infoRes.json();
+            setArchivedProjectInfo(info);
+        } catch (err) {
+            console.error("Update archived description error:", err);
+            setError("Failed to update project description");
+        }
+    }, [selectedArchivedProject, API_BASE]);
 
     const handleSaveAnalys = useCallback(async () => {
         if (!analysRow) return;
@@ -645,6 +724,8 @@ export default function App() {
                 <AddProjectForm
                     newProjectName={newProjectName}
                     setNewProjectName={setNewProjectName}
+                    newProjectDescription={newProjectDescription}
+                    setNewProjectDescription={setNewProjectDescription}
                     handleAddProject={handleAddProject}
                     onCancel={() => setActiveTab("")}
                     t={t}
@@ -753,6 +834,14 @@ export default function App() {
                 </div>
             )}
 
+            {selectedProject && projectInfo && !showArchived && (
+                <ProjectDescriptionBox
+                    projectInfo={projectInfo}
+                    onUpdate={handleUpdateProjectDescription}
+                    t={t}
+                />
+            )}
+
             <div className="table-container">
                 {showArchived ? (
                     <>
@@ -794,6 +883,14 @@ export default function App() {
                                 </button>
                             )}
                         </div>
+
+                        {selectedArchivedProject && archivedProjectInfo && (
+                            <ProjectDescriptionBox
+                                projectInfo={archivedProjectInfo}
+                                onUpdate={handleUpdateArchivedProjectDescription}
+                                t={t}
+                            />
+                        )}
 
                         {!selectedArchivedProject ? (
                             <div className="empty-state">
@@ -1027,7 +1124,7 @@ function NewTestForm({ form, setForm, handleSubmit, isFormValid, onCancel, t, la
     );
 }
 
-function AddProjectForm({ newProjectName, setNewProjectName, handleAddProject, onCancel, t }) {
+function AddProjectForm({ newProjectName, setNewProjectName, newProjectDescription, setNewProjectDescription, handleAddProject, onCancel, t }) {
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && newProjectName.trim()) {
             handleAddProject();
@@ -1045,6 +1142,29 @@ function AddProjectForm({ newProjectName, setNewProjectName, handleAddProject, o
                     placeholder={t.enterProjectName}
                     autoFocus
                 />
+            </label>
+            <label style={{ gridColumn: '1 / -1' }}>
+                {t.projectDescription}
+                <textarea
+                    value={newProjectDescription}
+                    onChange={e => setNewProjectDescription(e.target.value)}
+                    rows={3}
+                    placeholder={t.enterProjectDescription}
+                    style={{ maxHeight: '72px', overflowY: 'auto', fontFamily: 'monospace' }}
+                />
+                <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    💡 Formatting: **bold**, *italic*, * bullets, 1. numbers, URLs auto-link
+                    <a
+                        href="/formatting.html"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ display: 'inline-flex', alignItems: 'center', color: '#3b82f6', textDecoration: 'none', gap: '2px' }}
+                        title="View formatting examples"
+                    >
+                        <Info size={14} />
+                        <span style={{ fontSize: '11px' }}>Examples</span>
+                    </a>
+                </div>
             </label>
             <div className="form-actions">
                 <button onClick={onCancel} className="btn gray">
@@ -1186,6 +1306,238 @@ function GenerellKonfigForm({ generellKonfig, setGenerellKonfig, handleAddGenere
                     <FilePlus size={16} /> {t.addConfigBtn}
                 </button>
             </div>
+        </div>
+    );
+}
+
+function ProjectDescriptionBox({ projectInfo, onUpdate, t }) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [description, setDescription] = useState("");
+
+    useEffect(() => {
+        if (projectInfo) {
+            setDescription(projectInfo.beskrivning || "");
+        }
+    }, [projectInfo]);
+
+    const handleSave = () => {
+        onUpdate(description);
+        setIsEditing(false);
+    };
+
+    const renderDescriptionText = (text) => {
+        if (!text) return null;
+
+        const lines = text.split('\n');
+        const elements = [];
+        let inBulletList = false;
+        let inNumberedList = false;
+        let bulletItems = [];
+        let numberedItems = [];
+
+        const parseInlineFormatting = (line) => {
+            const parts = [];
+            let currentText = line;
+            let key = 0;
+
+            // Process URLs, bold, and italic
+            const urlRegex = /(https?:\/\/[^\s]+)|(\*\*(.+?)\*\*)|(__(.+?)__)|(\*(.+?)\*)|(_(.+?)_)/g;
+            let lastIndex = 0;
+            let match;
+
+            while ((match = urlRegex.exec(currentText)) !== null) {
+                // Add text before match
+                if (match.index > lastIndex) {
+                    parts.push(currentText.substring(lastIndex, match.index));
+                }
+
+                if (match[1]) {
+                    // URL
+                    parts.push(
+                        <a key={key++} href={match[1]} target="_blank" rel="noopener noreferrer"
+                           style={{color: '#3b82f6', textDecoration: 'underline', fontWeight: 'inherit'}}>
+                            {match[1]}
+                        </a>
+                    );
+                } else if (match[2]) {
+                    // **bold**
+                    parts.push(<strong key={key++}>{match[3]}</strong>);
+                } else if (match[4]) {
+                    // __bold__
+                    parts.push(<strong key={key++}>{match[5]}</strong>);
+                } else if (match[6]) {
+                    // *italic*
+                    parts.push(<em key={key++}>{match[7]}</em>);
+                } else if (match[8]) {
+                    // _italic_
+                    parts.push(<em key={key++}>{match[9]}</em>);
+                }
+
+                lastIndex = match.index + match[0].length;
+            }
+
+            // Add remaining text
+            if (lastIndex < currentText.length) {
+                parts.push(currentText.substring(lastIndex));
+            }
+
+            return parts.length > 0 ? parts : currentText;
+        };
+
+        lines.forEach((line, lineIdx) => {
+            const trimmedLine = line.trim();
+
+            // Check for bullet point
+            const bulletMatch = trimmedLine.match(/^[\*\-•]\s+(.+)$/);
+            // Check for numbered list
+            const numberedMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
+
+            if (bulletMatch) {
+                if (inNumberedList) {
+                    elements.push(<ol key={`ol-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{numberedItems}</ol>);
+                    numberedItems = [];
+                    inNumberedList = false;
+                }
+
+                inBulletList = true;
+                bulletItems.push(
+                    <li key={bulletItems.length} style={{marginBottom: '2px'}}>
+                        {parseInlineFormatting(bulletMatch[1])}
+                    </li>
+                );
+            } else if (numberedMatch) {
+                if (inBulletList) {
+                    elements.push(<ul key={`ul-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{bulletItems}</ul>);
+                    bulletItems = [];
+                    inBulletList = false;
+                }
+
+                inNumberedList = true;
+                numberedItems.push(
+                    <li key={numberedItems.length} style={{marginBottom: '2px'}}>
+                        {parseInlineFormatting(numberedMatch[2])}
+                    </li>
+                );
+            } else {
+                // End any active list
+                if (inBulletList) {
+                    elements.push(<ul key={`ul-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{bulletItems}</ul>);
+                    bulletItems = [];
+                    inBulletList = false;
+                }
+                if (inNumberedList) {
+                    elements.push(<ol key={`ol-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{numberedItems}</ol>);
+                    numberedItems = [];
+                    inNumberedList = false;
+                }
+
+                // Regular line
+                if (trimmedLine) {
+                    elements.push(
+                        <div key={`line-${lineIdx}`} style={{marginBottom: '4px'}}>
+                            {parseInlineFormatting(line)}
+                        </div>
+                    );
+                } else {
+                    // Empty line for spacing
+                    elements.push(<div key={`line-${lineIdx}`} style={{height: '8px'}} />);
+                }
+            }
+        });
+
+        // Close any remaining list
+        if (inBulletList) {
+            elements.push(<ul key={`ul-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{bulletItems}</ul>);
+        }
+        if (inNumberedList) {
+            elements.push(<ol key={`ol-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{numberedItems}</ol>);
+        }
+
+        return elements;
+    };
+
+    if (!projectInfo) return null;
+
+    return (
+        <div style={{
+            margin: '20px 0',
+            padding: '16px',
+            background: '#f9fafb',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px'
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#374151' }}>
+                    {t.projectDescription}
+                </h3>
+                {!isEditing && (
+                    <Pencil
+                        size={16}
+                        className="icon-btn"
+                        onClick={() => setIsEditing(true)}
+                        style={{ cursor: 'pointer' }}
+                        title={t.edit || "Edit"}
+                    />
+                )}
+            </div>
+            {isEditing ? (
+                <div>
+                    <textarea
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
+                        rows={3}
+                        style={{
+                            width: '100%',
+                            padding: '8px',
+                            fontSize: '14px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            resize: 'vertical',
+                            maxHeight: '150px',
+                            overflowY: 'auto',
+                            fontFamily: 'monospace'
+                        }}
+                    />
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        💡 Formatting: **bold**, *italic*, * bullets, 1. numbers, URLs auto-link
+                        <a
+                            href="/formatting.html"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ display: 'inline-flex', alignItems: 'center', color: '#3b82f6', textDecoration: 'none', gap: '2px' }}
+                            title="View formatting examples"
+                        >
+                            <Info size={14} />
+                            <span style={{ fontSize: '11px' }}>Examples</span>
+                        </a>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        <button onClick={handleSave} className="btn green" style={{ fontSize: '12px', padding: '4px 12px' }}>
+                            <Save size={14} /> {t.save}
+                        </button>
+                        <button onClick={() => {
+                            setDescription(projectInfo.beskrivning || "");
+                            setIsEditing(false);
+                        }} className="btn gray" style={{ fontSize: '12px', padding: '4px 12px' }}>
+                            <XCircle size={14} /> {t.cancel}
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div style={{
+                    margin: 0,
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    lineHeight: '1.6',
+                    maxHeight: '120px',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'normal'
+                }}>
+                    {projectInfo.beskrivning ? renderDescriptionText(projectInfo.beskrivning) : <em>{t.noDescriptionYet}</em>}
+                </div>
+            )}
         </div>
     );
 }
