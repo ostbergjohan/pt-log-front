@@ -1155,7 +1155,7 @@ function AddProjectForm({ newProjectName, setNewProjectName, newProjectDescripti
                 <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     💡 Formatting: **bold**, *italic*, * bullets, 1. numbers, URLs auto-link
                     <a
-                        href={`${window.location.origin}/formatting.html`}
+                        href="/formatting.html"
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{ display: 'inline-flex', alignItems: 'center', color: '#3b82f6', textDecoration: 'none', gap: '2px' }}
@@ -1501,7 +1501,7 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, t }) {
                     <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         💡 Formatting: **bold**, *italic*, * bullets, 1. numbers, URLs auto-link
                         <a
-                            href={`${window.location.origin}/formatting.html`}
+                            href="/formatting.html"
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ display: 'inline-flex', alignItems: 'center', color: '#3b82f6', textDecoration: 'none', gap: '2px' }}
@@ -1604,7 +1604,7 @@ function DbInfoFooter({ dbInfo, apiBase, backendStatus }) {
             <span style={{ color: '#d1d5db' }}>•</span>
 
             <a
-                href="https://github.com/ostbergjohan/pt-log-backend"
+                href="https://github.com/ostbergjohan/pt-log-front"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

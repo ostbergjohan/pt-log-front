@@ -54,4 +54,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3001', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Serve the production build
-CMD ["serve", "-s", "build", "-l", "3001", "--no-clipboard"]
+CMD ["serve", "-s", "/opt/app-root/src/build", "-l", "3001", "--no-clipboard"]
