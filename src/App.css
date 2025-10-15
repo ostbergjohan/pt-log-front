@@ -11,6 +11,7 @@
   margin: 0 auto;
   background: #f5f5f5;
   min-height: 100vh;
+  padding-bottom: 40px;
 }
 
 .header-row {
@@ -74,6 +75,24 @@
 
 .btn.gray { background: #757575; color: white; }
 .btn.gray:hover:not(:disabled) { background: #616161; }
+
+.btn.orange {
+  background: #ff8c00;
+  color: white;
+}
+
+.btn.orange:hover:not(:disabled) {
+  background: #e67e00;
+}
+
+.btn.purple {
+  background: #9b59b6;
+  color: white;
+}
+
+.btn.purple:hover:not(:disabled) {
+  background: #8e44ad;
+}
 
 .label {
   font-weight: 600;
@@ -391,6 +410,33 @@ tr:hover { background: #f0f7ff; }
   animation: spin 1s linear infinite;
 }
 
+/* Custom Scrollbar Styling */
+/* For WebKit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -443,8 +489,6 @@ tr:hover { background: #f0f7ff; }
   table { min-width: 800px; }
 }
 
-/* Add this to your App.css file */
-
 .db-info-footer {
   position: fixed;
   bottom: 0;
@@ -479,29 +523,6 @@ tr:hover { background: #f0f7ff; }
   padding: 2px 6px;
   border-radius: 3px;
   font-size: 10px;
-}
-
-/* Add padding to app-container to prevent content from being hidden behind footer */
-.app-container {
-  padding-bottom: 40px;
-}
-
-.btn.orange {
-  background: #ff8c00;
-  color: white;
-}
-
-.btn.orange:hover:not(:disabled) {
-  background: #e67e00;
-}
-
-.btn.purple {
-  background: #9b59b6;
-  color: white;
-}
-
-.btn.purple:hover:not(:disabled) {
-  background: #8e44ad;
 }
 
 /* Language Selector Styling */
