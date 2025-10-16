@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Archive, Server, CheckCircle, XCircleIcon, Database, Github, Info } from "lucide-react";
+import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Archive, Server, CheckCircle, Database, Github, Info } from "lucide-react";
 import testersData from "./testers.json";
 import config from "./config";
 import translations from "./translations";
@@ -25,6 +25,8 @@ export default function App() {
     const [projectInfo, setProjectInfo] = useState(null);
     const [analysRow, setAnalysRow] = useState(null);
     const [analysText, setAnalysText] = useState("");
+    const [syfteRow, setSyfteRow] = useState(null);
+    const [syfteText, setSyfteText] = useState("");
     const [copied, setCopied] = useState(false);
     const [testers] = useState(testersData);
     const [kalkyl, setKalkyl] = useState({ reqH: "", reqS: "", vu: "", pacing: "", skript: "" });
@@ -41,6 +43,7 @@ export default function App() {
     const [archivedProjectInfo, setArchivedProjectInfo] = useState(null);
     const [dbInfo, setDbInfo] = useState(null);
     const [backendStatus, setBackendStatus] = useState("checking");
+    const [showFormattingHelp, setShowFormattingHelp] = useState(false);
 
     const t = translations[language];
     const API_BASE = config.API_BASE;
@@ -370,6 +373,35 @@ export default function App() {
             setError("Failed to update analysis");
         }
     }, [analysRow, analysText, API_BASE, refreshData]);
+
+    const handleSaveSyfte = useCallback(async () => {
+        if (!syfteRow) return;
+
+        setError("");
+        const payload = {
+            Projekt: syfteRow.PROJEKT ?? syfteRow.projekt,
+            Testnamn: syfteRow.TESTNAMN ?? syfteRow.testnamn,
+            Syfte: syfteText.trim()
+        };
+
+        try {
+            const res = await fetch(`${API_BASE}/updateSyfte`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error("Update failed");
+
+            setSyfteRow(null);
+            setSyfteText("");
+            setActiveTab("");
+            await refreshData();
+        } catch (err) {
+            console.error("UpdateSyfte error:", err);
+            setError("Failed to update purpose");
+        }
+    }, [syfteRow, syfteText, API_BASE, refreshData]);
 
     const handleCopy = useCallback((text) => {
         if (!text) return;
@@ -728,6 +760,7 @@ export default function App() {
                     setNewProjectDescription={setNewProjectDescription}
                     handleAddProject={handleAddProject}
                     onCancel={() => setActiveTab("")}
+                    onShowFormattingHelp={() => setShowFormattingHelp(true)}
                     t={t}
                 />
             )}
@@ -742,6 +775,21 @@ export default function App() {
                         setActiveTab("");
                         setAnalysRow(null);
                         setAnalysText("");
+                    }}
+                    t={t}
+                />
+            )}
+
+            {activeTab === "editSyfte" && syfteRow && (
+                <EditSyfteForm
+                    row={syfteRow}
+                    syfteText={syfteText}
+                    setSyfteText={setSyfteText}
+                    handleSaveSyfte={handleSaveSyfte}
+                    cancel={() => {
+                        setActiveTab("");
+                        setSyfteRow(null);
+                        setSyfteText("");
                     }}
                     t={t}
                 />
@@ -834,10 +882,15 @@ export default function App() {
                 </div>
             )}
 
+            {showFormattingHelp && (
+                <FormattingHelpModal onClose={() => setShowFormattingHelp(false)} />
+            )}
+
             {selectedProject && projectInfo && !showArchived && (
                 <ProjectDescriptionBox
                     projectInfo={projectInfo}
                     onUpdate={handleUpdateProjectDescription}
+                    onShowFormattingHelp={() => setShowFormattingHelp(true)}
                     t={t}
                 />
             )}
@@ -888,6 +941,7 @@ export default function App() {
                             <ProjectDescriptionBox
                                 projectInfo={archivedProjectInfo}
                                 onUpdate={handleUpdateArchivedProjectDescription}
+                                onShowFormattingHelp={() => setShowFormattingHelp(true)}
                                 t={t}
                             />
                         )}
@@ -949,6 +1003,19 @@ export default function App() {
                                                                         setAnalysRow(row);
                                                                         setAnalysText(row.ANALYS ?? row.analys ?? "");
                                                                         setActiveTab("addAnalys");
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        ) : dbCol === "SYFTE" ? (
+                                                            <div className="cell-with-action">
+                                                                <span>{row[dbCol] ?? row[dbCol.toLowerCase()] ?? ""}</span>
+                                                                <Pencil
+                                                                    size={16}
+                                                                    className="icon-btn"
+                                                                    onClick={() => {
+                                                                        setSyfteRow(row);
+                                                                        setSyfteText(row.SYFTE ?? row.syfte ?? "");
+                                                                        setActiveTab("editSyfte");
                                                                     }}
                                                                 />
                                                             </div>
@@ -1041,6 +1108,19 @@ export default function App() {
                                                             }}
                                                         />
                                                     </div>
+                                                ) : dbCol === "SYFTE" ? (
+                                                    <div className="cell-with-action">
+                                                        <span>{row[dbCol] ?? row[dbCol.toLowerCase()] ?? ""}</span>
+                                                        <Pencil
+                                                            size={16}
+                                                            className="icon-btn"
+                                                            onClick={() => {
+                                                                setSyfteRow(row);
+                                                                setSyfteText(row.SYFTE ?? row.syfte ?? "");
+                                                                setActiveTab("editSyfte");
+                                                            }}
+                                                        />
+                                                    </div>
                                                 ) : dbCol === "TESTNAMN" ? (
                                                     <div className="cell-with-action">
                                                         <span>{row[dbCol] ?? row[dbCol.toLowerCase()] ?? ""}</span>
@@ -1124,7 +1204,7 @@ function NewTestForm({ form, setForm, handleSubmit, isFormValid, onCancel, t, la
     );
 }
 
-function AddProjectForm({ newProjectName, setNewProjectName, newProjectDescription, setNewProjectDescription, handleAddProject, onCancel, t }) {
+function AddProjectForm({ newProjectName, setNewProjectName, newProjectDescription, setNewProjectDescription, handleAddProject, onCancel, onShowFormattingHelp, t }) {
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && newProjectName.trim()) {
             handleAddProject();
@@ -1154,16 +1234,23 @@ function AddProjectForm({ newProjectName, setNewProjectName, newProjectDescripti
                 />
                 <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     💡 Formatting: **bold**, *italic*, * bullets, 1. numbers, URLs auto-link
-                    <a
-                        href="/formatting.html"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ display: 'inline-flex', alignItems: 'center', color: '#3b82f6', textDecoration: 'none', gap: '2px' }}
+                    <button
+                        onClick={onShowFormattingHelp}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            color: '#3b82f6',
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            cursor: 'pointer',
+                            gap: '2px'
+                        }}
                         title="View formatting examples"
                     >
                         <Info size={14} />
                         <span style={{ fontSize: '11px' }}>Examples</span>
-                    </a>
+                    </button>
                 </div>
             </label>
             <div className="form-actions">
@@ -1200,6 +1287,30 @@ function AddAnalysForm({ row, analysText, setAnalysText, handleSaveAnalys, cance
                 </button>
                 <button onClick={handleSaveAnalys} className="btn green">
                     <Save size={16} /> {t.saveAnalysis}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function EditSyfteForm({ row, syfteText, setSyfteText, handleSaveSyfte, cancel, t }) {
+    return (
+        <div className="form-grid">
+            <label style={{ gridColumn: '1 / -1' }}>
+                {t.purposeFor || "Purpose for"} {row.TESTNAMN ?? row.testnamn}
+                <textarea
+                    value={syfteText}
+                    onChange={e => setSyfteText(e.target.value)}
+                    rows={4}
+                    placeholder={t.describePurpose || t.describeTestPurpose}
+                />
+            </label>
+            <div className="form-actions">
+                <button onClick={cancel} className="btn gray">
+                    <XCircle size={16} /> {t.cancel}
+                </button>
+                <button onClick={handleSaveSyfte} className="btn green">
+                    <Save size={16} /> {t.savePurpose || t.save}
                 </button>
             </div>
         </div>
@@ -1310,7 +1421,7 @@ function GenerellKonfigForm({ generellKonfig, setGenerellKonfig, handleAddGenere
     );
 }
 
-function ProjectDescriptionBox({ projectInfo, onUpdate, t }) {
+function ProjectDescriptionBox({ projectInfo, onUpdate, onShowFormattingHelp, t }) {
     const [isEditing, setIsEditing] = useState(false);
     const [description, setDescription] = useState("");
 
@@ -1340,19 +1451,16 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, t }) {
             let currentText = line;
             let key = 0;
 
-            // Process URLs, bold, and italic
             const urlRegex = /(https?:\/\/[^\s]+)|(\*\*(.+?)\*\*)|(__(.+?)__)|(\*(.+?)\*)|(_(.+?)_)/g;
             let lastIndex = 0;
             let match;
 
             while ((match = urlRegex.exec(currentText)) !== null) {
-                // Add text before match
                 if (match.index > lastIndex) {
                     parts.push(currentText.substring(lastIndex, match.index));
                 }
 
                 if (match[1]) {
-                    // URL
                     parts.push(
                         <a key={key++} href={match[1]} target="_blank" rel="noopener noreferrer"
                            style={{color: '#3b82f6', textDecoration: 'underline', fontWeight: 'inherit'}}>
@@ -1360,23 +1468,18 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, t }) {
                         </a>
                     );
                 } else if (match[2]) {
-                    // **bold**
                     parts.push(<strong key={key++}>{match[3]}</strong>);
                 } else if (match[4]) {
-                    // __bold__
                     parts.push(<strong key={key++}>{match[5]}</strong>);
                 } else if (match[6]) {
-                    // *italic*
                     parts.push(<em key={key++}>{match[7]}</em>);
                 } else if (match[8]) {
-                    // _italic_
                     parts.push(<em key={key++}>{match[9]}</em>);
                 }
 
                 lastIndex = match.index + match[0].length;
             }
 
-            // Add remaining text
             if (lastIndex < currentText.length) {
                 parts.push(currentText.substring(lastIndex));
             }
@@ -1387,9 +1490,7 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, t }) {
         lines.forEach((line, lineIdx) => {
             const trimmedLine = line.trim();
 
-            // Check for bullet point
             const bulletMatch = trimmedLine.match(/^[\*\-•]\s+(.+)$/);
-            // Check for numbered list
             const numberedMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
 
             if (bulletMatch) {
@@ -1419,7 +1520,6 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, t }) {
                     </li>
                 );
             } else {
-                // End any active list
                 if (inBulletList) {
                     elements.push(<ul key={`ul-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{bulletItems}</ul>);
                     bulletItems = [];
@@ -1431,7 +1531,6 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, t }) {
                     inNumberedList = false;
                 }
 
-                // Regular line
                 if (trimmedLine) {
                     elements.push(
                         <div key={`line-${lineIdx}`} style={{marginBottom: '4px'}}>
@@ -1439,13 +1538,11 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, t }) {
                         </div>
                     );
                 } else {
-                    // Empty line for spacing
                     elements.push(<div key={`line-${lineIdx}`} style={{height: '8px'}} />);
                 }
             }
         });
 
-        // Close any remaining list
         if (inBulletList) {
             elements.push(<ul key={`ul-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{bulletItems}</ul>);
         }
@@ -1500,16 +1597,23 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, t }) {
                     />
                     <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         💡 Formatting: **bold**, *italic*, * bullets, 1. numbers, URLs auto-link
-                        <a
-                            href="/formatting.html"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ display: 'inline-flex', alignItems: 'center', color: '#3b82f6', textDecoration: 'none', gap: '2px' }}
+                        <button
+                            onClick={onShowFormattingHelp}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                color: '#3b82f6',
+                                background: 'none',
+                                border: 'none',
+                                padding: 0,
+                                cursor: 'pointer',
+                                gap: '2px'
+                            }}
                             title="View formatting examples"
                         >
                             <Info size={14} />
                             <span style={{ fontSize: '11px' }}>Examples</span>
-                        </a>
+                        </button>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                         <button onClick={handleSave} className="btn green" style={{ fontSize: '12px', padding: '4px 12px' }}>
@@ -1576,7 +1680,7 @@ function DbInfoFooter({ dbInfo, apiBase, backendStatus }) {
                     <CheckCircle size={16} style={{ color: '#10b981' }} title="Backend Online" />
                 )}
                 {backendStatus === "offline" && (
-                    <XCircleIcon size={16} style={{ color: '#ef4444' }} title="Backend Offline" />
+                    <XCircle size={16} style={{ color: '#ef4444' }} title="Backend Offline" />
                 )}
                 {backendStatus === "checking" && (
                     <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>checking...</span>
@@ -1628,5 +1732,61 @@ function DbInfoFooter({ dbInfo, apiBase, backendStatus }) {
                 Made with ❤️ for performance testers
             </span>
         </footer>
+    );
+}
+
+function FormattingHelpModal({ onClose }) {
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '16px' }}>📋 Formatting Quick Reference</h3>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                    <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                        <th style={{ textAlign: 'left', padding: '8px', color: '#374151' }}>Format</th>
+                        <th style={{ textAlign: 'left', padding: '8px', color: '#374151' }}>Syntax</th>
+                        <th style={{ textAlign: 'left', padding: '8px', color: '#374151' }}>Result</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '8px' }}>Bold</td>
+                        <td style={{ padding: '8px', fontFamily: 'monospace', background: '#f5f5f5' }}>**text**</td>
+                        <td style={{ padding: '8px' }}><strong>text</strong></td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '8px' }}>Italic</td>
+                        <td style={{ padding: '8px', fontFamily: 'monospace', background: '#f5f5f5' }}>*text*</td>
+                        <td style={{ padding: '8px' }}><em>text</em></td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '8px' }}>Bullet</td>
+                        <td style={{ padding: '8px', fontFamily: 'monospace', background: '#f5f5f5' }}>* item</td>
+                        <td style={{ padding: '8px' }}>• item</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '8px' }}>Numbered</td>
+                        <td style={{ padding: '8px', fontFamily: 'monospace', background: '#f5f5f5' }}>1. item</td>
+                        <td style={{ padding: '8px' }}>1. item</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '8px' }}>Link</td>
+                        <td style={{ padding: '8px', fontFamily: 'monospace', background: '#f5f5f5' }}>https://example.com</td>
+                        <td style={{ padding: '8px' }}><a href="https://example.com" style={{ color: '#3b82f6' }}>https://example.com</a></td>
+                    </tr>
+                    <tr>
+                        <td style={{ padding: '8px' }}>Spacing</td>
+                        <td style={{ padding: '8px', fontFamily: 'monospace', background: '#f5f5f5' }}>(blank line)</td>
+                        <td style={{ padding: '8px', fontSize: '13px', color: '#6b7280' }}>Adds space between sections</td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div className="modal-actions" style={{ marginTop: '20px' }}>
+                    <button onClick={onClose} className="btn blue">
+                        <Check size={16} /> Got it!
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 }
