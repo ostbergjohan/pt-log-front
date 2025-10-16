@@ -45,6 +45,15 @@ export default function App() {
     const [backendStatus, setBackendStatus] = useState("checking");
     const [showFormattingHelp, setShowFormattingHelp] = useState(false);
     const [updatingMarkera, setUpdatingMarkera] = useState(null);
+    const [santaClicked, setSantaClicked] = useState(0);
+    const [showSantaMessage, setShowSantaMessage] = useState(false);
+
+    const isChristmasWeek = useMemo(() => {
+        const now = new Date();
+        const month = now.getMonth(); // 0-11
+        const day = now.getDate();
+        return month === 11 && day >= 18 && day <= 27; // December 18-27
+    }, []);
 
     const t = translations[language];
     const API_BASE = config.API_BASE;
@@ -694,6 +703,27 @@ export default function App() {
         );
     }, []);
 
+    const handleSantaClick = useCallback(() => {
+        const messages = [
+            "🎅 Ho Ho Ho! Keep testing!",
+            "🎄 Merry Load Testing!",
+            "⭐ May your response times be low!",
+            "🎁 Santa's checking your test coverage twice!",
+            "❄️ Let it load, let it load, let it load!",
+            "🔔 Jingle tests, jingle tests, jingle all the way!",
+            "🎅 Santa approves of your performance tests!"
+        ];
+        setSantaClicked(prev => prev + 1);
+        setShowSantaMessage(true);
+
+        if (santaClicked >= 5) {
+            alert("🎅🎄 BONUS EASTER EGG! 🎄🎅\n\nYou've clicked Santa " + (santaClicked + 1) + " times!\n\nMay your servers never crash and your load tests always pass!\n\n- Santa's Performance Testing Workshop 🎁");
+            setSantaClicked(0);
+        }
+
+        setTimeout(() => setShowSantaMessage(false), 3000);
+    }, [santaClicked]);
+
     const columns = [t.date, t.colType, t.colTestName, t.colPurpose, t.colAnalysis, t.colTester, t.action];
     const isFormValid = form.Testnamn.trim() && form.Syfte.trim() && selectedProject;
 
@@ -1246,6 +1276,95 @@ export default function App() {
                 )}
             </div>
 
+            {isChristmasWeek && (
+                <>
+                    <div
+                        onClick={handleSantaClick}
+                        style={{
+                            position: 'fixed',
+                            bottom: '80px',
+                            right: '20px',
+                            cursor: 'pointer',
+                            zIndex: 1000,
+                            animation: 'bounce 2s infinite',
+                            transition: 'transform 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2) rotate(10deg)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
+                        title="🎅 Click me for holiday cheer!"
+                    >
+                        <img
+                            src="/santa.png"
+                            alt="Santa"
+                            style={{
+                                width: '80px',
+                                height: '80px',
+                                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
+                            }}
+                        />
+                    </div>
+
+                    {showSantaMessage && (
+                        <div style={{
+                            position: 'fixed',
+                            bottom: '170px',
+                            right: '20px',
+                            background: '#dc2626',
+                            color: 'white',
+                            padding: '12px 20px',
+                            borderRadius: '20px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                            zIndex: 1001,
+                            animation: 'slideUp 0.3s ease',
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            border: '3px solid #16a34a'
+                        }}>
+                            {["🎅 Ho Ho Ho! Keep testing!", "🎄 Merry Load Testing!", "⭐ May your response times be low!", "🎁 Santa's checking your test coverage twice!", "❄️ Let it load, let it load, let it load!", "🔔 Jingle tests, jingle tests, jingle all the way!", "🎅 Santa approves of your performance tests!"][santaClicked % 7]}
+                        </div>
+                    )}
+
+                    <style>{`
+                        @keyframes bounce {
+                            0%, 100% { transform: translateY(0); }
+                            50% { transform: translateY(-20px); }
+                        }
+                        
+                        @keyframes snowfall {
+                            0% { transform: translateY(-10px) translateX(0); opacity: 1; }
+                            100% { transform: translateY(100vh) translateX(50px); opacity: 0.3; }
+                        }
+                        
+                        .snowflake {
+                            position: fixed;
+                            top: -10px;
+                            color: white;
+                            font-size: 20px;
+                            user-select: none;
+                            pointer-events: none;
+                            z-index: 999;
+                            animation: snowfall linear infinite;
+                        }
+                    `}</style>
+
+                    {/* Snowflakes */}
+                    {[...Array(10)].map((_, i) => (
+                        <div
+                            key={i}
+                            className="snowflake"
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                animationDuration: `${5 + Math.random() * 10}s`,
+                                animationDelay: `${Math.random() * 5}s`,
+                                opacity: Math.random() * 0.6 + 0.4
+                            }}
+                        >
+                            ❄
+                        </div>
+                    ))}
+                </>
+            )}
+
             <DbInfoFooter dbInfo={dbInfo} apiBase={API_BASE} backendStatus={backendStatus} />
         </div>
     );
@@ -1738,6 +1857,13 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, onShowFormattingHelp, t 
 }
 
 function DbInfoFooter({ dbInfo, apiBase, backendStatus }) {
+    const isChristmasWeek = useMemo(() => {
+        const now = new Date();
+        const month = now.getMonth();
+        const day = now.getDate();
+        return month === 11 && day >= 18 && day <= 27;
+    }, []);
+
     if (!dbInfo) return null;
 
     return (
@@ -1814,13 +1940,34 @@ function DbInfoFooter({ dbInfo, apiBase, backendStatus }) {
                 onMouseOut={(e) => e.currentTarget.style.color = '#6b7280'}
             >
                 <Github size={16} />
-                <span>ostbergjohan/pt-log-backend</span>
+                <span>Frontend</span>
             </a>
 
             <span style={{ color: '#d1d5db' }}>•</span>
 
-            <span style={{ fontSize: '0.875rem', color: '#9ca3af' }}>
-                Made with ❤️ for performance testers
+            <a
+                href="https://github.com/ostbergjohan/pt-log-backend"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: '#6b7280',
+                    textDecoration: 'none',
+                    transition: 'color 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.color = '#000'}
+                onMouseOut={(e) => e.currentTarget.style.color = '#6b7280'}
+            >
+                <Github size={16} />
+                <span>Backend</span>
+            </a>
+
+            <span style={{ color: '#d1d5db' }}>•</span>
+
+            <span style={{ fontSize: '0.875rem', color: isChristmasWeek ? '#dc2626' : '#9ca3af', fontWeight: isChristmasWeek ? '600' : 'normal' }}>
+                {isChristmasWeek ? '🎄 Happy Holidays from PT-Log! 🎅' : 'Made with ❤️ for performance testers'}
             </span>
         </footer>
     );
