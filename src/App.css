@@ -551,3 +551,13 @@ tr:hover { background: #f0f7ff; }
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
+
+th:last-child {
+  width: 100px;
+  text-align: center;
+}
+
+td:last-child {
+  text-align: center;
+  width: 100px;
+}

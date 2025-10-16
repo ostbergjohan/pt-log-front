@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Archive, Server, CheckCircle, Database, Github, Info } from "lucide-react";
+import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Archive, Server, CheckCircle, Database, Github, Info, Star } from "lucide-react";
 import testersData from "./testers.json";
 import config from "./config";
 import translations from "./translations";
@@ -44,6 +44,7 @@ export default function App() {
     const [dbInfo, setDbInfo] = useState(null);
     const [backendStatus, setBackendStatus] = useState("checking");
     const [showFormattingHelp, setShowFormattingHelp] = useState(false);
+    const [updatingMarkera, setUpdatingMarkera] = useState(null);
 
     const t = translations[language];
     const API_BASE = config.API_BASE;
@@ -172,12 +173,18 @@ export default function App() {
                 return res.json();
             })
             .then(rawData => {
+                console.log("Raw archived data from backend:", rawData);
                 const formatted = rawData.map(item => {
                     const d = new Date(item.DATUM || item.Datum);
                     const dateStr = d.toISOString().split("T")[0];
                     const timeStr = d.toTimeString().slice(0, 5);
-                    return { ...item, DATUM: `${dateStr} ${timeStr}` };
+                    return {
+                        ...item,
+                        DATUM: `${dateStr} ${timeStr}`,
+                        MARKERA: item.MARKERA ?? item.markera ?? 0
+                    };
                 });
+                console.log("Formatted archived data:", formatted);
                 setArchivedData(formatted);
             })
             .catch(err => {
@@ -204,12 +211,18 @@ export default function App() {
                 return res.json();
             })
             .then(rawData => {
+                console.log("Raw data from backend:", rawData);
                 const formatted = rawData.map(item => {
                     const d = new Date(item.DATUM || item.Datum);
                     const dateStr = d.toISOString().split("T")[0];
                     const timeStr = d.toTimeString().slice(0, 5);
-                    return { ...item, DATUM: `${dateStr} ${timeStr}` };
+                    return {
+                        ...item,
+                        DATUM: `${dateStr} ${timeStr}`,
+                        MARKERA: item.MARKERA ?? item.markera ?? 0
+                    };
                 });
+                console.log("Formatted data:", formatted);
                 setData(formatted);
             })
             .catch(err => {
@@ -626,6 +639,50 @@ export default function App() {
         }
     }, [API_BASE, selectedArchivedProject, fetchArchivedProjects]);
 
+    const handleToggleMarkera = useCallback(async (row) => {
+        const projekt = row.PROJEKT ?? row.projekt;
+        const testnamn = row.TESTNAMN ?? row.testnamn;
+        const currentMarkera = row.MARKERA ?? row.markera ?? 0;
+        const newMarkera = currentMarkera === 1 ? 0 : 1;
+
+        setUpdatingMarkera(`${projekt}-${testnamn}`);
+        setError("");
+
+        try {
+            const res = await fetch(`${API_BASE}/updateMarkera`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    Projekt: projekt,
+                    Testnamn: testnamn,
+                    Markera: newMarkera
+                })
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Update markera failed: ${errorText}`);
+            }
+
+            // Small delay to ensure backend has committed the change
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Refresh data based on which view is active
+            if (showArchived && selectedArchivedProject) {
+                await refreshArchivedData();
+            } else if (selectedProject) {
+                await refreshData();
+            }
+
+            console.log(`Successfully toggled MARKERA for ${testnamn} to ${newMarkera}`);
+        } catch (err) {
+            console.error("Toggle markera error:", err);
+            setError("Failed to toggle highlight: " + err.message);
+        } finally {
+            setUpdatingMarkera(null);
+        }
+    }, [API_BASE, showArchived, selectedArchivedProject, selectedProject, refreshArchivedData, refreshData]);
+
     const renderAnalysText = useCallback((text) => {
         if (!text) return "";
         const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -967,7 +1024,14 @@ export default function App() {
                                     </tr>
                                 ) : archivedData.length ? (
                                     archivedData.map((row, i) => (
-                                        <tr key={i} className={i % 2 === 0 ? "even" : "odd"}>
+                                        <tr
+                                            key={i}
+                                            className={i % 2 === 0 ? "even" : "odd"}
+                                            style={(row.MARKERA ?? row.markera) === 1 ? {
+                                                background: 'linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%)',
+                                                borderLeft: '3px solid #fbbf24'
+                                            } : {}}
+                                        >
                                             {columns.map(col => {
                                                 let dbCol;
                                                 if (col === t.date) dbCol = "DATUM";
@@ -982,7 +1046,19 @@ export default function App() {
                                                 return (
                                                     <td key={col}>
                                                         {dbCol === "ÅTGÄRD" ? (
-                                                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                                                                <Star
+                                                                    size={18}
+                                                                    className="icon-btn"
+                                                                    onClick={() => handleToggleMarkera(row)}
+                                                                    title={(row.MARKERA ?? row.markera) === 1 ? t.unmarkTest || "Remove highlight" : t.markTest || "Highlight test"}
+                                                                    style={{
+                                                                        cursor: updatingMarkera === `${row.PROJEKT ?? row.projekt}-${row.TESTNAMN ?? row.testnamn}` ? 'wait' : 'pointer',
+                                                                        fill: (row.MARKERA ?? row.markera) === 1 ? '#fbbf24' : 'none',
+                                                                        color: (row.MARKERA ?? row.markera) === 1 ? '#fbbf24' : '#9ca3af',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                />
                                                                 <Trash2
                                                                     size={18}
                                                                     className="icon-btn delete-btn"
@@ -1069,7 +1145,14 @@ export default function App() {
                             </tr>
                         ) : data.length ? (
                             data.map((row, i) => (
-                                <tr key={i} className={i % 2 === 0 ? "even" : "odd"}>
+                                <tr
+                                    key={i}
+                                    className={i % 2 === 0 ? "even" : "odd"}
+                                    style={(row.MARKERA ?? row.markera) === 1 ? {
+                                        background: 'linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%)',
+                                        borderLeft: '3px solid #fbbf24'
+                                    } : {}}
+                                >
                                     {columns.map(col => {
                                         let dbCol;
                                         if (col === t.date) dbCol = "DATUM";
@@ -1084,7 +1167,19 @@ export default function App() {
                                         return (
                                             <td key={col}>
                                                 {dbCol === "ÅTGÄRD" ? (
-                                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                                                        <Star
+                                                            size={18}
+                                                            className="icon-btn"
+                                                            onClick={() => handleToggleMarkera(row)}
+                                                            title={(row.MARKERA ?? row.markera) === 1 ? t.unmarkTest || "Remove highlight" : t.markTest || "Highlight test"}
+                                                            style={{
+                                                                cursor: updatingMarkera === `${row.PROJEKT ?? row.projekt}-${row.TESTNAMN ?? row.testnamn}` ? 'wait' : 'pointer',
+                                                                fill: (row.MARKERA ?? row.markera) === 1 ? '#fbbf24' : 'none',
+                                                                color: (row.MARKERA ?? row.markera) === 1 ? '#fbbf24' : '#9ca3af',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                        />
                                                         <Trash2
                                                             size={18}
                                                             className="icon-btn delete-btn"
@@ -1561,22 +1656,18 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, onShowFormattingHelp, t 
             padding: '16px',
             background: '#f9fafb',
             border: '1px solid #e5e7eb',
-            borderRadius: '8px'
+            borderRadius: '8px',
+            position: 'relative'
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#374151' }}>
-                    {t.projectDescription}
-                </h3>
-                {!isEditing && (
-                    <Pencil
-                        size={16}
-                        className="icon-btn"
-                        onClick={() => setIsEditing(true)}
-                        style={{ cursor: 'pointer' }}
-                        title={t.edit || "Edit"}
-                    />
-                )}
-            </div>
+            {!isEditing && (
+                <Pencil
+                    size={16}
+                    className="icon-btn"
+                    onClick={() => setIsEditing(true)}
+                    style={{ cursor: 'pointer', position: 'absolute', top: '16px', right: '16px' }}
+                    title={t.edit || "Edit"}
+                />
+            )}
             {isEditing ? (
                 <div>
                     <textarea
