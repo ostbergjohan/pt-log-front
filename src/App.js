@@ -1,9 +1,174 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Archive, Server, CheckCircle, Database, Github, Info, Star } from "lucide-react";
+import { Pencil, Copy, FilePlus, FolderPlus, Save, XCircle, PlusCircle, Calculator, RefreshCw, Check, Trash2, Archive, Server, CheckCircle, Database, Github, Star, Bold, Italic, List, ListOrdered, Link as LinkIcon, Eraser } from "lucide-react";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import Underline from '@tiptap/extension-underline';
 import testersData from "./testers.json";
 import config from "./config";
 import translations from "./translations";
 import "./App.css";
+
+// Tiptap Editor Component
+function TiptapEditor({ content, onChange, placeholder = "Enter text..." }) {
+    const [isInternalChange, setIsInternalChange] = useState(false);
+    
+    const editor = useEditor({
+        extensions: [
+            StarterKit,
+            Link.configure({
+                openOnClick: false,
+                HTMLAttributes: {
+                    class: 'editor-link',
+                },
+            }),
+            Underline,
+        ],
+        content: content || '',
+        onUpdate: ({ editor }) => {
+            setIsInternalChange(true);
+            onChange(editor.getHTML());
+        },
+        onCreate: ({ editor }) => {
+            // Clear any active marks when editor is created
+            setTimeout(() => {
+                if (editor && !editor.isDestroyed) {
+                    editor.commands.unsetAllMarks();
+                    // Also clear stored marks in the transaction
+                    const { tr } = editor.state;
+                    tr.setStoredMarks([]);
+                    editor.view.dispatch(tr);
+                }
+            }, 0);
+        },
+        onFocus: ({ editor }) => {
+            // Clear stored marks when editor receives focus
+            setTimeout(() => {
+                if (editor && !editor.isDestroyed) {
+                    const { tr } = editor.state;
+                    tr.setStoredMarks([]);
+                    editor.view.dispatch(tr);
+                }
+            }, 0);
+        },
+        onSelectionUpdate: ({ editor }) => {
+            // Clear stored marks when selection changes to prevent auto-formatting
+            const { state } = editor;
+            if (state.storedMarks && state.storedMarks.length > 0) {
+                const { tr } = state;
+                tr.setStoredMarks([]);
+                editor.view.dispatch(tr);
+            }
+        },
+    });
+
+    useEffect(() => {
+        if (editor && !isInternalChange && content !== editor.getHTML()) {
+            const { from, to } = editor.state.selection;
+            editor.commands.setContent(content || '', false);
+            // Clear all marks and stored marks after setting content
+            setTimeout(() => {
+                if (editor && !editor.isDestroyed) {
+                    editor.commands.unsetAllMarks();
+                    const { tr } = editor.state;
+                    tr.setStoredMarks([]);
+                    editor.view.dispatch(tr);
+                }
+            }, 0);
+            // Restore cursor position if possible
+            if (from !== undefined && to !== undefined) {
+                try {
+                    editor.commands.setTextSelection({ from, to });
+                } catch (e) {
+                    // Position might be invalid after content change, ignore
+                }
+            }
+        }
+        setIsInternalChange(false);
+    }, [content, editor, isInternalChange]);
+
+    if (!editor) {
+        return null;
+    }
+
+    const addLink = () => {
+        const url = window.prompt('Enter URL:');
+        if (url) {
+            editor.chain().focus().setLink({ href: url }).run();
+        }
+    };
+
+    const handleToolbarClick = (command) => {
+        command();
+        // After any toolbar action, focus the editor
+        editor.chain().focus().run();
+    };
+
+    return (
+        <div className="tiptap-editor">
+            <div className="tiptap-toolbar">
+                <button
+                    type="button"
+                    onClick={() => handleToolbarClick(() => editor.chain().focus().toggleBold().run())}
+                    className={editor.isActive('bold') ? 'is-active' : ''}
+                    title="Bold"
+                >
+                    <Bold size={16} />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => handleToolbarClick(() => editor.chain().focus().toggleItalic().run())}
+                    className={editor.isActive('italic') ? 'is-active' : ''}
+                    title="Italic"
+                >
+                    <Italic size={16} />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => handleToolbarClick(() => editor.chain().focus().toggleUnderline().run())}
+                    className={editor.isActive('underline') ? 'is-active' : ''}
+                    title="Underline"
+                >
+                    <u style={{ fontSize: '16px', fontWeight: 'bold' }}>U</u>
+                </button>
+                <span className="toolbar-separator"></span>
+                <button
+                    type="button"
+                    onClick={() => handleToolbarClick(() => editor.chain().focus().toggleBulletList().run())}
+                    className={editor.isActive('bulletList') ? 'is-active' : ''}
+                    title="Bullet List"
+                >
+                    <List size={16} />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => handleToolbarClick(() => editor.chain().focus().toggleOrderedList().run())}
+                    className={editor.isActive('orderedList') ? 'is-active' : ''}
+                    title="Numbered List"
+                >
+                    <ListOrdered size={16} />
+                </button>
+                <span className="toolbar-separator"></span>
+                <button
+                    type="button"
+                    onClick={() => handleToolbarClick(addLink)}
+                    className={editor.isActive('link') ? 'is-active' : ''}
+                    title="Add Link"
+                >
+                    <LinkIcon size={16} />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => handleToolbarClick(() => editor.chain().focus().clearNodes().unsetAllMarks().run())}
+                    title="Clear Formatting"
+                >
+                    <Eraser size={16} />
+                </button>
+            </div>
+            <EditorContent editor={editor} placeholder={placeholder} />
+        </div>
+    );
+}
 
 export default function App() {
     const [language, setLanguage] = useState(() => localStorage.getItem('language') || 'en');
@@ -50,9 +215,9 @@ export default function App() {
 
     const isChristmasWeek = useMemo(() => {
         const now = new Date();
-        const month = now.getMonth(); // 0-11
+        const month = now.getMonth();
         const day = now.getDate();
-        return month === 11 && day >= 18 && day <= 27; // December 18-27
+        return month === 11 && day >= 18 && day <= 27;
     }, []);
 
     const t = translations[language];
@@ -474,22 +639,30 @@ export default function App() {
         }
 
         setError("");
-        const newRow = {
-            TESTNAMN: t.pacingTestName,
-            REQH: reqH.toString(),
-            REQS: calculatedKalkyl.reqS,
-            VU: kalkyl.vu,
-            PACING: calculatedKalkyl.pacing,
-            SKRIPT: kalkyl.skript || "",
-            PROJEKT: selectedProject,
-            TESTARE: form.Testare
+        
+        // Create rich text description with bullets and highlighted pacing
+        const description = `<ul>
+<li>ReqH: ${reqH.toFixed(2)}</li>
+<li>ReqS: ${calculatedKalkyl.reqS}</li>
+<li>VU: ${kalkyl.vu}</li>
+<li><strong>Pacing: ${calculatedKalkyl.pacing}</strong></li>${kalkyl.skript ? `
+<li>Skript: ${kalkyl.skript}</li>` : ''}
+</ul>`;
+        
+        const payload = {
+            Datum: new Date().toISOString(),
+            Typ: "pacing",
+            Testnamn: t.pacingTestName,
+            Syfte: description,
+            Testare: form.Testare,
+            Projekt: selectedProject
         };
 
         try {
-            const res = await fetch(`${API_BASE}/addKonfig`, {
+            const res = await fetch(`${API_BASE}/insert`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(newRow)
+                body: JSON.stringify(payload)
             });
 
             if (!res.ok) throw new Error("Add konfig failed");
@@ -673,10 +846,8 @@ export default function App() {
                 throw new Error(`Update markera failed: ${errorText}`);
             }
 
-            // Small delay to ensure backend has committed the change
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            // Refresh data based on which view is active
             if (showArchived && selectedArchivedProject) {
                 await refreshArchivedData();
             } else if (selectedProject) {
@@ -694,6 +865,9 @@ export default function App() {
 
     const renderAnalysText = useCallback((text) => {
         if (!text) return "";
+        if (/<[a-z][\s\S]*>/i.test(text)) {
+            return <span className="html-content" dangerouslySetInnerHTML={{ __html: text }} />;
+        }
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         const parts = text.split(urlRegex);
         return parts.map((part, idx) =>
@@ -703,21 +877,46 @@ export default function App() {
         );
     }, []);
 
+    const santaMessages = useMemo(() => [
+        "🎅 Ho Ho Ho! Keep testing!",
+        "🎄 Merry Load Testing!",
+        "⭐ May your response times be low!",
+        "🎁 Santa's checking your test coverage twice!",
+        "❄️ Let it load, let it load, let it load!",
+        "🔔 Jingle tests, jingle tests, jingle all the way!",
+        "🎅 Santa approves of your performance tests!"
+    ], []);
+
     const handleSantaClick = useCallback(() => {
-        const messages = [
-            "🎅 Ho Ho Ho! Keep testing!",
-            "🎄 Merry Load Testing!",
-            "⭐ May your response times be low!",
-            "🎁 Santa's checking your test coverage twice!",
-            "❄️ Let it load, let it load, let it load!",
-            "🔔 Jingle tests, jingle tests, jingle all the way!",
-            "🎅 Santa approves of your performance tests!"
-        ];
         setSantaClicked(prev => prev + 1);
         setShowSantaMessage(true);
 
+        // Play 15 seconds of jingle bells after 5 clicks
         if (santaClicked >= 5) {
-            alert("🎅🎄 BONUS EASTER EGG! 🎄🎅\n\nYou've clicked Santa " + (santaClicked + 1) + " times!\n\nMay your servers never crash and your load tests always pass!\n\n- Santa's Performance Testing Workshop 🎁");
+            // Try to play the audio file
+            const audio = new Audio('/jingle-bells.mp3');
+            audio.volume = 0.3;
+            
+            // Add event listeners to ensure it plays
+            audio.addEventListener('canplaythrough', () => {
+                console.log('Audio loaded and ready to play');
+            });
+            
+            audio.addEventListener('error', (e) => {
+                console.error('Audio loading error:', e);
+            });
+            
+            // Play the audio
+            const playPromise = audio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('Jingle Bells audio playing successfully!');
+                }).catch(error => {
+                    console.error('Audio play failed:', error);
+                });
+            }
+            
             setSantaClicked(0);
         }
 
@@ -847,7 +1046,6 @@ export default function App() {
                     setNewProjectDescription={setNewProjectDescription}
                     handleAddProject={handleAddProject}
                     onCancel={() => setActiveTab("")}
-                    onShowFormattingHelp={() => setShowFormattingHelp(true)}
                     t={t}
                 />
             )}
@@ -977,7 +1175,6 @@ export default function App() {
                 <ProjectDescriptionBox
                     projectInfo={projectInfo}
                     onUpdate={handleUpdateProjectDescription}
-                    onShowFormattingHelp={() => setShowFormattingHelp(true)}
                     t={t}
                 />
             )}
@@ -1028,7 +1225,6 @@ export default function App() {
                             <ProjectDescriptionBox
                                 projectInfo={archivedProjectInfo}
                                 onUpdate={handleUpdateArchivedProjectDescription}
-                                onShowFormattingHelp={() => setShowFormattingHelp(true)}
                                 t={t}
                             />
                         )}
@@ -1114,7 +1310,9 @@ export default function App() {
                                                             </div>
                                                         ) : dbCol === "SYFTE" ? (
                                                             <div className="cell-with-action">
-                                                                <span>{row[dbCol] ?? row[dbCol.toLowerCase()] ?? ""}</span>
+                                                                <span className="analys-text">
+                                                                    {renderAnalysText(row[dbCol] ?? row[dbCol.toLowerCase()] ?? "")}
+                                                                </span>
                                                                 <Pencil
                                                                     size={16}
                                                                     className="icon-btn"
@@ -1235,7 +1433,9 @@ export default function App() {
                                                     </div>
                                                 ) : dbCol === "SYFTE" ? (
                                                     <div className="cell-with-action">
-                                                        <span>{row[dbCol] ?? row[dbCol.toLowerCase()] ?? ""}</span>
+                                                        <span className="analys-text">
+                                                            {renderAnalysText(row[dbCol] ?? row[dbCol.toLowerCase()] ?? "")}
+                                                        </span>
                                                         <Pencil
                                                             size={16}
                                                             className="icon-btn"
@@ -1320,7 +1520,7 @@ export default function App() {
                             fontSize: '14px',
                             border: '3px solid #16a34a'
                         }}>
-                            {["🎅 Ho Ho Ho! Keep testing!", "🎄 Merry Load Testing!", "⭐ May your response times be low!", "🎁 Santa's checking your test coverage twice!", "❄️ Let it load, let it load, let it load!", "🔔 Jingle tests, jingle tests, jingle all the way!", "🎅 Santa approves of your performance tests!"][santaClicked % 7]}
+                            {santaMessages[santaClicked % santaMessages.length]}
                         </div>
                     )}
 
@@ -1331,32 +1531,40 @@ export default function App() {
                         }
                         
                         @keyframes snowfall {
-                            0% { transform: translateY(-10px) translateX(0); opacity: 1; }
-                            100% { transform: translateY(100vh) translateX(50px); opacity: 0.3; }
+                            0% { transform: translateY(-10px) translateX(0) rotate(0deg); opacity: 1; }
+                            100% { transform: translateY(100vh) translateX(50px) rotate(360deg); opacity: 0.3; }
                         }
                         
                         .snowflake {
                             position: fixed;
                             top: -10px;
                             color: white;
-                            font-size: 20px;
+                            font-size: 24px;
                             user-select: none;
                             pointer-events: none;
                             z-index: 999;
                             animation: snowfall linear infinite;
+                            text-shadow: 
+                                -1px -1px 0 #3b82f6,
+                                1px -1px 0 #3b82f6,
+                                -1px 1px 0 #3b82f6,
+                                1px 1px 0 #3b82f6,
+                                0 0 10px rgba(59, 130, 246, 0.5),
+                                0 0 20px rgba(59, 130, 246, 0.3);
+                            filter: drop-shadow(0 0 5px rgba(147, 197, 253, 0.8));
                         }
                     `}</style>
 
-                    {/* Snowflakes */}
-                    {[...Array(10)].map((_, i) => (
+                    {[...Array(15)].map((_, i) => (
                         <div
                             key={i}
                             className="snowflake"
                             style={{
                                 left: `${Math.random() * 100}%`,
-                                animationDuration: `${5 + Math.random() * 10}s`,
+                                animationDuration: `${8 + Math.random() * 12}s`,
                                 animationDelay: `${Math.random() * 5}s`,
-                                opacity: Math.random() * 0.6 + 0.4
+                                opacity: Math.random() * 0.4 + 0.6,
+                                fontSize: `${18 + Math.random() * 12}px`
                             }}
                         >
                             ❄
@@ -1370,6 +1578,7 @@ export default function App() {
     );
 }
 
+// Form components
 function NewTestForm({ form, setForm, handleSubmit, isFormValid, onCancel, t, language }) {
     const testTypeOptions = config.testTypes.map(type => ({
         key: type.key,
@@ -1418,7 +1627,7 @@ function NewTestForm({ form, setForm, handleSubmit, isFormValid, onCancel, t, la
     );
 }
 
-function AddProjectForm({ newProjectName, setNewProjectName, newProjectDescription, setNewProjectDescription, handleAddProject, onCancel, onShowFormattingHelp, t }) {
+function AddProjectForm({ newProjectName, setNewProjectName, newProjectDescription, setNewProjectDescription, handleAddProject, onCancel, t }) {
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && newProjectName.trim()) {
             handleAddProject();
@@ -1439,33 +1648,11 @@ function AddProjectForm({ newProjectName, setNewProjectName, newProjectDescripti
             </label>
             <label style={{ gridColumn: '1 / -1' }}>
                 {t.projectDescription}
-                <textarea
-                    value={newProjectDescription}
-                    onChange={e => setNewProjectDescription(e.target.value)}
-                    rows={3}
+                <TiptapEditor
+                    content={newProjectDescription}
+                    onChange={setNewProjectDescription}
                     placeholder={t.enterProjectDescription}
-                    style={{ maxHeight: '72px', overflowY: 'auto', fontFamily: 'monospace' }}
                 />
-                <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    💡 Formatting: **bold**, *italic*, * bullets, 1. numbers, URLs auto-link
-                    <button
-                        onClick={onShowFormattingHelp}
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            color: '#3b82f6',
-                            background: 'none',
-                            border: 'none',
-                            padding: 0,
-                            cursor: 'pointer',
-                            gap: '2px'
-                        }}
-                        title="View formatting examples"
-                    >
-                        <Info size={14} />
-                        <span style={{ fontSize: '11px' }}>Examples</span>
-                    </button>
-                </div>
             </label>
             <div className="form-actions">
                 <button onClick={onCancel} className="btn gray">
@@ -1488,10 +1675,9 @@ function AddAnalysForm({ row, analysText, setAnalysText, handleSaveAnalys, cance
         <div className="form-grid">
             <label style={{ gridColumn: '1 / -1' }}>
                 {t.analysisFor} {row.TESTNAMN ?? row.testnamn}
-                <textarea
-                    value={analysText}
-                    onChange={e => setAnalysText(e.target.value)}
-                    rows={4}
+                <TiptapEditor
+                    content={analysText}
+                    onChange={setAnalysText}
                     placeholder={t.describeAnalysis}
                 />
             </label>
@@ -1512,10 +1698,9 @@ function EditSyfteForm({ row, syfteText, setSyfteText, handleSaveSyfte, cancel, 
         <div className="form-grid">
             <label style={{ gridColumn: '1 / -1' }}>
                 {t.purposeFor || "Purpose for"} {row.TESTNAMN ?? row.testnamn}
-                <textarea
-                    value={syfteText}
-                    onChange={e => setSyfteText(e.target.value)}
-                    rows={4}
+                <TiptapEditor
+                    content={syfteText}
+                    onChange={setSyfteText}
                     placeholder={t.describePurpose || t.describeTestPurpose}
                 />
             </label>
@@ -1612,10 +1797,9 @@ function GenerellKonfigForm({ generellKonfig, setGenerellKonfig, handleAddGenere
         <div className="form-grid">
             <label style={{ gridColumn: '1 / -1' }}>
                 {t.configDescription} *
-                <textarea
-                    value={generellKonfig.beskrivning}
-                    onChange={e => setGenerellKonfig({ beskrivning: e.target.value })}
-                    rows={4}
+                <TiptapEditor
+                    content={generellKonfig.beskrivning}
+                    onChange={(value) => setGenerellKonfig({ beskrivning: value })}
                     placeholder={t.describeConfig}
                 />
             </label>
@@ -1635,7 +1819,7 @@ function GenerellKonfigForm({ generellKonfig, setGenerellKonfig, handleAddGenere
     );
 }
 
-function ProjectDescriptionBox({ projectInfo, onUpdate, onShowFormattingHelp, t }) {
+function ProjectDescriptionBox({ projectInfo, onUpdate, t }) {
     const [isEditing, setIsEditing] = useState(false);
     const [description, setDescription] = useState("");
 
@@ -1648,123 +1832,6 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, onShowFormattingHelp, t 
     const handleSave = () => {
         onUpdate(description);
         setIsEditing(false);
-    };
-
-    const renderDescriptionText = (text) => {
-        if (!text) return null;
-
-        const lines = text.split('\n');
-        const elements = [];
-        let inBulletList = false;
-        let inNumberedList = false;
-        let bulletItems = [];
-        let numberedItems = [];
-
-        const parseInlineFormatting = (line) => {
-            const parts = [];
-            let currentText = line;
-            let key = 0;
-
-            const urlRegex = /(https?:\/\/[^\s]+)|(\*\*(.+?)\*\*)|(__(.+?)__)|(\*(.+?)\*)|(_(.+?)_)/g;
-            let lastIndex = 0;
-            let match;
-
-            while ((match = urlRegex.exec(currentText)) !== null) {
-                if (match.index > lastIndex) {
-                    parts.push(currentText.substring(lastIndex, match.index));
-                }
-
-                if (match[1]) {
-                    parts.push(
-                        <a key={key++} href={match[1]} target="_blank" rel="noopener noreferrer"
-                           style={{color: '#3b82f6', textDecoration: 'underline', fontWeight: 'inherit'}}>
-                            {match[1]}
-                        </a>
-                    );
-                } else if (match[2]) {
-                    parts.push(<strong key={key++}>{match[3]}</strong>);
-                } else if (match[4]) {
-                    parts.push(<strong key={key++}>{match[5]}</strong>);
-                } else if (match[6]) {
-                    parts.push(<em key={key++}>{match[7]}</em>);
-                } else if (match[8]) {
-                    parts.push(<em key={key++}>{match[9]}</em>);
-                }
-
-                lastIndex = match.index + match[0].length;
-            }
-
-            if (lastIndex < currentText.length) {
-                parts.push(currentText.substring(lastIndex));
-            }
-
-            return parts.length > 0 ? parts : currentText;
-        };
-
-        lines.forEach((line, lineIdx) => {
-            const trimmedLine = line.trim();
-
-            const bulletMatch = trimmedLine.match(/^[\*\-•]\s+(.+)$/);
-            const numberedMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
-
-            if (bulletMatch) {
-                if (inNumberedList) {
-                    elements.push(<ol key={`ol-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{numberedItems}</ol>);
-                    numberedItems = [];
-                    inNumberedList = false;
-                }
-
-                inBulletList = true;
-                bulletItems.push(
-                    <li key={bulletItems.length} style={{marginBottom: '2px'}}>
-                        {parseInlineFormatting(bulletMatch[1])}
-                    </li>
-                );
-            } else if (numberedMatch) {
-                if (inBulletList) {
-                    elements.push(<ul key={`ul-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{bulletItems}</ul>);
-                    bulletItems = [];
-                    inBulletList = false;
-                }
-
-                inNumberedList = true;
-                numberedItems.push(
-                    <li key={numberedItems.length} style={{marginBottom: '2px'}}>
-                        {parseInlineFormatting(numberedMatch[2])}
-                    </li>
-                );
-            } else {
-                if (inBulletList) {
-                    elements.push(<ul key={`ul-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{bulletItems}</ul>);
-                    bulletItems = [];
-                    inBulletList = false;
-                }
-                if (inNumberedList) {
-                    elements.push(<ol key={`ol-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{numberedItems}</ol>);
-                    numberedItems = [];
-                    inNumberedList = false;
-                }
-
-                if (trimmedLine) {
-                    elements.push(
-                        <div key={`line-${lineIdx}`} style={{marginBottom: '4px'}}>
-                            {parseInlineFormatting(line)}
-                        </div>
-                    );
-                } else {
-                    elements.push(<div key={`line-${lineIdx}`} style={{height: '8px'}} />);
-                }
-            }
-        });
-
-        if (inBulletList) {
-            elements.push(<ul key={`ul-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{bulletItems}</ul>);
-        }
-        if (inNumberedList) {
-            elements.push(<ol key={`ol-${elements.length}`} style={{margin: '4px 0', paddingLeft: '24px'}}>{numberedItems}</ol>);
-        }
-
-        return elements;
     };
 
     if (!projectInfo) return null;
@@ -1789,43 +1856,11 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, onShowFormattingHelp, t 
             )}
             {isEditing ? (
                 <div>
-                    <textarea
-                        value={description}
-                        onChange={e => setDescription(e.target.value)}
-                        rows={3}
-                        style={{
-                            width: '100%',
-                            padding: '8px',
-                            fontSize: '14px',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '4px',
-                            resize: 'vertical',
-                            maxHeight: '150px',
-                            overflowY: 'auto',
-                            fontFamily: 'monospace'
-                        }}
+                    <TiptapEditor
+                        content={description}
+                        onChange={setDescription}
                     />
-                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        💡 Formatting: **bold**, *italic*, * bullets, 1. numbers, URLs auto-link
-                        <button
-                            onClick={onShowFormattingHelp}
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                color: '#3b82f6',
-                                background: 'none',
-                                border: 'none',
-                                padding: 0,
-                                cursor: 'pointer',
-                                gap: '2px'
-                            }}
-                            title="View formatting examples"
-                        >
-                            <Info size={14} />
-                            <span style={{ fontSize: '11px' }}>Examples</span>
-                        </button>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                         <button onClick={handleSave} className="btn green" style={{ fontSize: '12px', padding: '4px 12px' }}>
                             <Save size={14} /> {t.save}
                         </button>
@@ -1838,7 +1873,7 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, onShowFormattingHelp, t 
                     </div>
                 </div>
             ) : (
-                <div style={{
+                <div className="html-content" style={{
                     margin: 0,
                     fontSize: '14px',
                     color: '#6b7280',
@@ -1849,7 +1884,11 @@ function ProjectDescriptionBox({ projectInfo, onUpdate, onShowFormattingHelp, t 
                     wordBreak: 'break-word',
                     whiteSpace: 'normal'
                 }}>
-                    {projectInfo.beskrivning ? renderDescriptionText(projectInfo.beskrivning) : <em>{t.noDescriptionYet}</em>}
+                    {projectInfo.beskrivning ? (
+                        <div dangerouslySetInnerHTML={{ __html: projectInfo.beskrivning }} />
+                    ) : (
+                        <em>{t.noDescriptionYet}</em>
+                    )}
                 </div>
             )}
         </div>
@@ -1977,48 +2016,51 @@ function FormattingHelpModal({ onClose }) {
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-                <h3 style={{ marginTop: 0, marginBottom: '16px' }}>📋 Formatting Quick Reference</h3>
+                <h3 style={{ marginTop: 0, marginBottom: '16px' }}>📝 Rich Text Editor Guide</h3>
+                <p style={{ color: '#6b7280', marginBottom: '16px' }}>
+                    Use the toolbar buttons to format your text:
+                </p>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                     <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                        <th style={{ textAlign: 'left', padding: '8px', color: '#374151' }}>Format</th>
-                        <th style={{ textAlign: 'left', padding: '8px', color: '#374151' }}>Syntax</th>
-                        <th style={{ textAlign: 'left', padding: '8px', color: '#374151' }}>Result</th>
+                        <th style={{ textAlign: 'left', padding: '8px', color: '#374151' }}>Feature</th>
+                        <th style={{ textAlign: 'left', padding: '8px', color: '#374151' }}>How to Use</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '8px' }}>Bold</td>
-                        <td style={{ padding: '8px', fontFamily: 'monospace', background: '#f5f5f5' }}>**text**</td>
-                        <td style={{ padding: '8px' }}><strong>text</strong></td>
+                        <td style={{ padding: '8px' }}><strong>Bold</strong></td>
+                        <td style={{ padding: '8px' }}>Select text and click <strong>B</strong> button</td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '8px' }}>Italic</td>
-                        <td style={{ padding: '8px', fontFamily: 'monospace', background: '#f5f5f5' }}>*text*</td>
-                        <td style={{ padding: '8px' }}><em>text</em></td>
+                        <td style={{ padding: '8px' }}><em>Italic</em></td>
+                        <td style={{ padding: '8px' }}>Select text and click <em>I</em> button</td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '8px' }}>Bullet</td>
-                        <td style={{ padding: '8px', fontFamily: 'monospace', background: '#f5f5f5' }}>* item</td>
-                        <td style={{ padding: '8px' }}>• item</td>
+                        <td style={{ padding: '8px' }}><u>Underline</u></td>
+                        <td style={{ padding: '8px' }}>Select text and click <u>U</u> button</td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '8px' }}>Numbered</td>
-                        <td style={{ padding: '8px', fontFamily: 'monospace', background: '#f5f5f5' }}>1. item</td>
-                        <td style={{ padding: '8px' }}>1. item</td>
+                        <td style={{ padding: '8px' }}>Bullet List</td>
+                        <td style={{ padding: '8px' }}>Click bullet list button, then type items</td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '8px' }}>Link</td>
-                        <td style={{ padding: '8px', fontFamily: 'monospace', background: '#f5f5f5' }}>https://example.com</td>
-                        <td style={{ padding: '8px' }}><a href="https://example.com" style={{ color: '#3b82f6' }}>https://example.com</a></td>
+                        <td style={{ padding: '8px' }}>Numbered List</td>
+                        <td style={{ padding: '8px' }}>Click numbered list button, then type items</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '8px' }}><span style={{ color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer' }}>Link</span></td>
+                        <td style={{ padding: '8px' }}>Select text, click link button, enter URL</td>
                     </tr>
                     <tr>
-                        <td style={{ padding: '8px' }}>Spacing</td>
-                        <td style={{ padding: '8px', fontFamily: 'monospace', background: '#f5f5f5' }}>(blank line)</td>
-                        <td style={{ padding: '8px', fontSize: '13px', color: '#6b7280' }}>Adds space between sections</td>
+                        <td style={{ padding: '8px' }}>Remove Formatting</td>
+                        <td style={{ padding: '8px' }}>Select text and click eraser button</td>
                     </tr>
                     </tbody>
                 </table>
+                <div style={{ marginTop: '16px', padding: '12px', background: '#f0f9ff', borderRadius: '6px', fontSize: '13px', color: '#1e40af' }}>
+                    💡 <strong>Tip:</strong> You can also paste formatted text from other applications, and the formatting will be preserved!
+                </div>
                 <div className="modal-actions" style={{ marginTop: '20px' }}>
                     <button onClick={onClose} className="btn blue">
                         <Check size={16} /> Got it!
