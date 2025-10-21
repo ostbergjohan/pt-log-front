@@ -42,6 +42,11 @@ const translations = {
         describeAnalysis: "Describe your analysis",
         saveAnalysis: "Save Analysis",
 
+        // Purpose
+        purposeFor: "Purpose for",
+        describePurpose: "Describe the purpose",
+        savePurpose: "Save Purpose",
+
         // Pacing Calculator
         numberOfVu: "Number of VU",
         virtualUsers: "Virtual Users",
@@ -75,6 +80,8 @@ const translations = {
         archiveProjectBtn: "Archive",
         restoreProject: "Restore",
         restoreProjectBtn: "Restore Project",
+        markTest: "Highlight test",
+        unmarkTest: "Remove highlight",
 
         // Empty States
         selectProjectToStart: "Select a project to get started",
@@ -131,6 +138,11 @@ const translations = {
         describeAnalysis: "Beskriv din analys",
         saveAnalysis: "Spara Analys",
 
+        // Purpose
+        purposeFor: "Syfte för",
+        describePurpose: "Beskriv syftet",
+        savePurpose: "Spara Syfte",
+
         // Pacing Calculator
         numberOfVu: "Antal VU",
         virtualUsers: "Virtuella användare",
@@ -164,6 +176,8 @@ const translations = {
         archiveProjectBtn: "Arkivera",
         restoreProject: "Återställ",
         restoreProjectBtn: "Återställ Projekt",
+        markTest: "Markera test",
+        unmarkTest: "Ta bort markering",
 
         // Empty States
         selectProjectToStart: "Välj ett projekt för att komma igång",
@@ -220,6 +234,11 @@ const translations = {
         describeAnalysis: "Décrire votre analyse",
         saveAnalysis: "Sauvegarder l'Analyse",
 
+        // Purpose
+        purposeFor: "Objectif pour",
+        describePurpose: "Décrire l'objectif",
+        savePurpose: "Sauvegarder l'Objectif",
+
         // Pacing Calculator
         numberOfVu: "Nombre de VU",
         virtualUsers: "Utilisateurs virtuels",
@@ -253,6 +272,8 @@ const translations = {
         archiveProjectBtn: "Archiver",
         restoreProject: "Restaurer",
         restoreProjectBtn: "Restaurer le Projet",
+        markTest: "Mettre en évidence le test",
+        unmarkTest: "Retirer la mise en évidence",
 
         // Empty States
         selectProjectToStart: "Sélectionner un projet pour commencer",
@@ -309,6 +330,11 @@ const translations = {
         describeAnalysis: "Ihre Analyse beschreiben",
         saveAnalysis: "Analyse Speichern",
 
+        // Purpose
+        purposeFor: "Zweck für",
+        describePurpose: "Den Zweck beschreiben",
+        savePurpose: "Zweck Speichern",
+
         // Pacing Calculator
         numberOfVu: "Anzahl VU",
         virtualUsers: "Virtuelle Benutzer",
@@ -342,6 +368,8 @@ const translations = {
         archiveProjectBtn: "Archivieren",
         restoreProject: "Wiederherstellen",
         restoreProjectBtn: "Projekt Wiederherstellen",
+        markTest: "Test hervorheben",
+        unmarkTest: "Hervorhebung entfernen",
 
         // Empty States
         selectProjectToStart: "Wählen Sie ein Projekt aus, um zu beginnen",
@@ -398,6 +426,11 @@ const translations = {
         describeAnalysis: "Beskriv din analyse",
         saveAnalysis: "Gem Analyse",
 
+        // Purpose
+        purposeFor: "Formål for",
+        describePurpose: "Beskriv formålet",
+        savePurpose: "Gem Formål",
+
         // Pacing Calculator
         numberOfVu: "Antal VU",
         virtualUsers: "Virtuelle brugere",
@@ -431,6 +464,8 @@ const translations = {
         archiveProjectBtn: "Arkiver",
         restoreProject: "Gendan",
         restoreProjectBtn: "Gendan Projekt",
+        markTest: "Fremhæv test",
+        unmarkTest: "Fjern fremhævelse",
 
         // Empty States
         selectProjectToStart: "Vælg et projekt for at komme i gang",
@@ -487,6 +522,11 @@ const translations = {
         describeAnalysis: "Beskriv din analyse",
         saveAnalysis: "Lagre Analyse",
 
+        // Purpose
+        purposeFor: "Formål for",
+        describePurpose: "Beskriv formålet",
+        savePurpose: "Lagre Formål",
+
         // Pacing Calculator
         numberOfVu: "Antall VU",
         virtualUsers: "Virtuelle brukere",
@@ -520,6 +560,8 @@ const translations = {
         archiveProjectBtn: "Arkiver",
         restoreProject: "Gjenopprett",
         restoreProjectBtn: "Gjenopprett Prosjekt",
+        markTest: "Marker test",
+        unmarkTest: "Fjern markering",
 
         // Empty States
         selectProjectToStart: "Velg et prosjekt for å komme i gang",
@@ -576,6 +618,11 @@ const translations = {
         describeAnalysis: "Kuvaile analyysisi",
         saveAnalysis: "Tallenna Analyysi",
 
+        // Purpose
+        purposeFor: "Tarkoitus kohteelle",
+        describePurpose: "Kuvaile tarkoitus",
+        savePurpose: "Tallenna Tarkoitus",
+
         // Pacing Calculator
         numberOfVu: "VU:iden Määrä",
         virtualUsers: "Virtuaalikäyttäjät",
@@ -609,6 +656,8 @@ const translations = {
         archiveProjectBtn: "Arkistoi",
         restoreProject: "Palauta",
         restoreProjectBtn: "Palauta Projekti",
+        markTest: "Korosta testi",
+        unmarkTest: "Poista korostus",
 
         // Empty States
         selectProjectToStart: "Valitse projekti aloittaaksesi",
@@ -620,6 +669,198 @@ const translations = {
         // Messages
         copied: "Kopioitu!",
         loadingData: "Ladataan dataa...",
+    },
+
+    es: {
+        // Header & Actions
+        newTest: "Nueva Prueba",
+        createProject: "Crear Proyecto",
+        project: "Proyecto",
+        selectProject: "Seleccionar un proyecto",
+        tester: "Probador",
+        selectTester: "Seleccionar probador",
+        calculatePacing: "Calcular Pacing",
+        generalConfig: "Config General",
+        refresh: "Actualizar",
+        showArchived: "Archivados",
+        cancel: "Cancelar",
+        save: "Guardar",
+        edit: "Editar",
+
+        // Form Labels
+        type: "Tipo",
+        testName: "Nombre de la Prueba",
+        enterTestName: "Introducir nombre de la prueba",
+        purpose: "Propósito",
+        describeTestPurpose: "Describir el propósito de la prueba",
+        saveTest: "Guardar Prueba",
+        projectName: "Nombre del Proyecto",
+        enterProjectName: "Introducir nombre del proyecto",
+        projectDescription: "Descripción del Proyecto",
+        enterProjectDescription: "Introducir descripción del proyecto (opcional)",
+        noDescriptionYet: "Sin descripción aún",
+
+        // Table Columns
+        date: "Fecha",
+        colType: "Tipo",
+        colTestName: "Nombre de la Prueba",
+        colPurpose: "Propósito",
+        colAnalysis: "Análisis",
+        colTester: "Probador",
+        action: "Acción",
+
+        // Analysis
+        analysisFor: "Análisis para",
+        describeAnalysis: "Describir su análisis",
+        saveAnalysis: "Guardar Análisis",
+
+        // Purpose
+        purposeFor: "Propósito para",
+        describePurpose: "Describir el propósito",
+        savePurpose: "Guardar Propósito",
+
+        // Pacing Calculator
+        numberOfVu: "Número de VU",
+        virtualUsers: "Usuarios virtuales",
+        calculated: "Calculado",
+        calculatedAutomatically: "Calculado automáticamente",
+        script: "Script",
+        scriptName: "Nombre del script",
+        addConfig: "Añadir Config",
+        fillReqAndVu: "Por favor, complete Req/h o Req/s y VU",
+        pacingTestName: "PACING",
+
+        // General Config
+        configDescription: "Descripción de la Configuración",
+        describeConfig: "Describir la configuración",
+        addConfigBtn: "Añadir Config",
+        fillDescription: "Por favor, complete la descripción",
+        configTestName: "CONFIG",
+
+        // Delete & Archive
+        deleteProject: "Eliminar Proyecto",
+        deleteProjectConfirm: "¿Está seguro de que desea eliminar permanentemente el proyecto",
+        deleteProjectWarning: "Esta acción no se puede deshacer. Todas las pruebas de este proyecto serán eliminadas.",
+        deleteProjectBtn: "Eliminar Proyecto",
+        deleteTest: "Eliminar Prueba",
+        deleteTestConfirm: "¿Está seguro de que desea eliminar la prueba",
+        deleteTestWarning: "Esta acción no se puede deshacer.",
+        deleteTestBtn: "Eliminar Prueba",
+        archiveProject: "Archivar Proyecto",
+        archiveProjectConfirm: "¿Está seguro de que desea archivar el proyecto",
+        archiveProjectWarning: "Los proyectos archivados pueden restaurarse más tarde.",
+        archiveProjectBtn: "Archivar",
+        restoreProject: "Restaurar",
+        restoreProjectBtn: "Restaurar Proyecto",
+        markTest: "Resaltar prueba",
+        unmarkTest: "Quitar resaltado",
+
+        // Empty States
+        selectProjectToStart: "Seleccione un proyecto para comenzar",
+        createOrSelect: "Crear un nuevo proyecto o seleccionar uno existente",
+        noTestsYet: "Sin pruebas aún. ¡Cree su primera prueba!",
+        noArchivedProjects: "Sin proyectos archivados",
+        selectArchivedProject: "Seleccionar un proyecto archivado para ver",
+
+        // Messages
+        copied: "¡Copiado!",
+        loadingData: "Cargando datos...",
+    },
+
+    pt: {
+        // Header & Actions
+        newTest: "Novo Teste",
+        createProject: "Criar Projeto",
+        project: "Projeto",
+        selectProject: "Selecionar um projeto",
+        tester: "Testador",
+        selectTester: "Selecionar testador",
+        calculatePacing: "Calcular Pacing",
+        generalConfig: "Config Geral",
+        refresh: "Atualizar",
+        showArchived: "Arquivados",
+        cancel: "Cancelar",
+        save: "Guardar",
+        edit: "Editar",
+
+        // Form Labels
+        type: "Tipo",
+        testName: "Nome do Teste",
+        enterTestName: "Introduzir nome do teste",
+        purpose: "Propósito",
+        describeTestPurpose: "Descrever o propósito do teste",
+        saveTest: "Guardar Teste",
+        projectName: "Nome do Projeto",
+        enterProjectName: "Introduzir nome do projeto",
+        projectDescription: "Descrição do Projeto",
+        enterProjectDescription: "Introduzir descrição do projeto (opcional)",
+        noDescriptionYet: "Sem descrição ainda",
+
+        // Table Columns
+        date: "Data",
+        colType: "Tipo",
+        colTestName: "Nome do Teste",
+        colPurpose: "Propósito",
+        colAnalysis: "Análise",
+        colTester: "Testador",
+        action: "Ação",
+
+        // Analysis
+        analysisFor: "Análise para",
+        describeAnalysis: "Descrever a sua análise",
+        saveAnalysis: "Guardar Análise",
+
+        // Purpose
+        purposeFor: "Propósito para",
+        describePurpose: "Descrever o propósito",
+        savePurpose: "Guardar Propósito",
+
+        // Pacing Calculator
+        numberOfVu: "Número de VU",
+        virtualUsers: "Utilizadores virtuais",
+        calculated: "Calculado",
+        calculatedAutomatically: "Calculado automaticamente",
+        script: "Script",
+        scriptName: "Nome do script",
+        addConfig: "Adicionar Config",
+        fillReqAndVu: "Por favor, preencha Req/h ou Req/s e VU",
+        pacingTestName: "PACING",
+
+        // General Config
+        configDescription: "Descrição da Configuração",
+        describeConfig: "Descrever a configuração",
+        addConfigBtn: "Adicionar Config",
+        fillDescription: "Por favor, preencha a descrição",
+        configTestName: "CONFIG",
+
+        // Delete & Archive
+        deleteProject: "Eliminar Projeto",
+        deleteProjectConfirm: "Tem a certeza de que deseja eliminar permanentemente o projeto",
+        deleteProjectWarning: "Esta ação não pode ser desfeita. Todos os testes deste projeto serão eliminados.",
+        deleteProjectBtn: "Eliminar Projeto",
+        deleteTest: "Eliminar Teste",
+        deleteTestConfirm: "Tem a certeza de que deseja eliminar o teste",
+        deleteTestWarning: "Esta ação não pode ser desfeita.",
+        deleteTestBtn: "Eliminar Teste",
+        archiveProject: "Arquivar Projeto",
+        archiveProjectConfirm: "Tem a certeza de que deseja arquivar o projeto",
+        archiveProjectWarning: "Projetos arquivados podem ser restaurados mais tarde.",
+        archiveProjectBtn: "Arquivar",
+        restoreProject: "Restaurar",
+        restoreProjectBtn: "Restaurar Projeto",
+        markTest: "Destacar teste",
+        unmarkTest: "Remover destaque",
+
+        // Empty States
+        selectProjectToStart: "Selecione um projeto para começar",
+        createOrSelect: "Criar um novo projeto ou selecionar um existente",
+        noTestsYet: "Sem testes ainda. Crie o seu primeiro teste!",
+        noArchivedProjects: "Sem projetos arquivados",
+        selectArchivedProject: "Selecionar um projeto arquivado para visualizar",
+
+        // Messages
+        copied: "Copiado!",
+        loadingData: "A carregar dados...",
     }
 };
 

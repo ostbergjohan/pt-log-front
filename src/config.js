@@ -9,7 +9,9 @@ const config = {
             de: 'Referenztest',
             da: 'Referencetest',
             no: 'Referansetest',
-            fi: 'Viitetesti'
+            fi: 'Viitetesti',
+            es: 'Prueba de Referencia',
+            pt: 'Teste de Referência'
         },
         {
             key: 'verification',
@@ -19,7 +21,9 @@ const config = {
             de: 'Verifizierungstest',
             da: 'Verifikationstest',
             no: 'Verifikasjonstest',
-            fi: 'Varmennustesti'
+            fi: 'Varmennustesti',
+            es: 'Prueba de Verificación',
+            pt: 'Teste de Verificação'
         },
         {
             key: 'load',
@@ -29,7 +33,9 @@ const config = {
             de: 'Belastungstest',
             da: 'Belastningstest',
             no: 'Belastningstest',
-            fi: 'Kuormitustesti'
+            fi: 'Kuormitustesti',
+            es: 'Prueba de Carga',
+            pt: 'Teste de Carga'
         },
         {
             key: 'endurance',
@@ -39,7 +45,9 @@ const config = {
             de: 'Ausdauertest',
             da: 'Udholdenhedstest',
             no: 'Utholdenhetstesti',
-            fi: 'Kestävyystesti'
+            fi: 'Kestävyystesti',
+            es: 'Prueba de Resistencia',
+            pt: 'Teste de Resistência'
         },
         {
             key: 'max',
@@ -49,7 +57,9 @@ const config = {
             de: 'Maximaltest',
             da: 'Maksimumtest',
             no: 'Makstest',
-            fi: 'Maksimitesti'
+            fi: 'Maksimitesti',
+            es: 'Prueba Máxima',
+            pt: 'Teste Máximo'
         },
         {
             key: 'create',
@@ -59,7 +69,9 @@ const config = {
             de: 'Erstellen',
             da: 'Opret',
             no: 'Opprett',
-            fi: 'Luo'
+            fi: 'Luo',
+            es: 'Crear',
+            pt: 'Criar'
         }
     ]
 };

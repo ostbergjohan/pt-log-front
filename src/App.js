@@ -223,15 +223,17 @@ export default function App() {
     const t = translations[language];
     const API_BASE = config.API_BASE;
 
-    const languageOptions = [
-        { code: 'en', name: 'English', flag: '🇬🇧' },
-        { code: 'sv', name: 'Svenska', flag: '🇸🇪' },
-        { code: 'fr', name: 'Français', flag: '🇫🇷' },
-        { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-        { code: 'da', name: 'Dansk', flag: '🇩🇰' },
-        { code: 'no', name: 'Norsk', flag: '🇳🇴' },
-        { code: 'fi', name: 'Suomi', flag: '🇫🇮' }
-    ];
+const languageOptions = [
+    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'sv', name: 'Svenska', flag: '🇸🇪' },
+    { code: 'fr', name: 'Français', flag: '🇫🇷' },
+    { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+    { code: 'da', name: 'Dansk', flag: '🇩🇰' },
+    { code: 'no', name: 'Norsk', flag: '🇳🇴' },
+    { code: 'fi', name: 'Suomi', flag: '🇫🇮' },
+    { code: 'es', name: 'Español', flag: '🇪🇸' },
+    { code: 'pt', name: 'Português', flag: '🇵🇹' }
+];
 
     useEffect(() => {
         localStorage.setItem('language', language);
