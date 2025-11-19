@@ -1605,11 +1605,11 @@ function NewTestForm({ form, setForm, handleSubmit, isFormValid, onCancel, t, la
                     placeholder={t.enterTestName}
                 />
             </label>
-            <label>
+            <label style={{ gridColumn: '1 / -1' }}>
                 {t.purpose} *
-                <input
-                    value={form.Syfte}
-                    onChange={e => setForm({ ...form, Syfte: e.target.value })}
+                <TiptapEditor
+                    content={form.Syfte}
+                    onChange={(value) => setForm({ ...form, Syfte: value })}
                     placeholder={t.describeTestPurpose}
                 />
             </label>
@@ -1628,7 +1628,6 @@ function NewTestForm({ form, setForm, handleSubmit, isFormValid, onCancel, t, la
         </div>
     );
 }
-
 function AddProjectForm({ newProjectName, setNewProjectName, newProjectDescription, setNewProjectDescription, handleAddProject, onCancel, t }) {
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && newProjectName.trim()) {
@@ -1902,7 +1901,7 @@ function DbInfoFooter({ dbInfo, apiBase, backendStatus }) {
         const now = new Date();
         const month = now.getMonth();
         const day = now.getDate();
-        return month === 11 && day >= 18 && day <= 27;
+        return month === 11 && day >= 15 && day <= 27;
     }, []);
 
     if (!dbInfo) return null;
